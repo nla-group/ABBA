@@ -1,29 +1,30 @@
 # ABBA
-This repository contains ABBA: A symbolic time series representation building
-Brownian bridges. The ABBA symbolic representation consists of two key parts:
-compression via a piecewise adaptive linear approximation and digitization via
-clustering on the increment and lengthe of each piece/segment. The algorithm
-uses a scaling parameter scl to control the weighting of the increments and
-lengths during the clustering.
+This repository provides ABBA, an algorithm for the adaptive symbolic 
+aggregation of time series. The ABBA symbolic representation consists of two 
+key parts: compression via an adaptive piecewise linear approximation and 
+digitization via mean-based clustering on the increments and lengths of each 
+piece. The algorithm uses a scaling parameter scl to control the weighting of 
+the increments and lengths during the clustering.
 
-If scl = 0 or scl = np.inf, then a one dimensional clustering algorithm can be
+If scl = 0 or scl = np.inf, then a one-dimensional clustering algorithm can be
 used. We use a modified C++ implementation of CKmeans from Ckmeans.1d.dp R
-package, see Prerequisites. If the C++ implementation is not available or a
-different scaling parameter value is used then ABBA uses Kmeans from the python
-package Scikit-learn.
+package; see Prerequisites. If the C++ implementation is not available or a
+different scaling parameter is used, then ABBA uses the Kmeans algorithm 
+from the Python package Scikit-learn.
 
-Consider a synthetic time series, applying ABBA's compression approximates the
-time series by a sequence of linear segments stitched together. Each segment can
-be represented by the change in x-direction (len) and change in y-direction (inc).
+As an example, we consider a synthetic time series and apply ABBA's compression
+method, which approximates the time series by a sequence of linear segments 
+stitched together. Each segment can be represented by its change in the 
+x-value (len) and change in y-direction (inc).
 
 ![Compression](./paper/basic_example/compression.png)
 
-Applying ABBAs digitization procedure clusters the tuples (len, inc) and pairs
-each cluster with a unique symbol.
+ABBA's digitization procedure clusters the tuples (len, inc) and pairs, 
+assigning a unique symbol to each cluster.
 
 ![Digitization](./paper/basic_example/digitization0.png)
 
-The symbolic representation of the time series is now 'abbacab'. For further
+The symbolic representation of the time series is 'abbacab'. For further
 information on ABBA, see [1].
 
 ### Prerequisites
@@ -44,7 +45,7 @@ Mac:
 brew install swig
 ```
 
-Once installed, the python wrapper can be constructed using the makefile.
+Once installed, the Python wrapper can be constructed using the makefile.
 ```
 make
 ```
@@ -78,11 +79,11 @@ file for details
 * All contributors to the UCR Time Series Classification Archive
 (https://www.cs.ucr.edu/~eamonn/time_series_data_2018/)
 * Dr Timothy D. Butters for help with C++ and SWIG
-* Massimiliano Fasi for performance profiling code
+* Massimiliano Fasi for the performance profiling code
 
 
 ## References
 
-[1] S. Elsworth and S. Güttel. ABBA: A symbolic time series representation
-building Brownian bridges, MIMS Eprint 2019.$ (<url>), Manchester Institute for
+[1] S. Elsworth and S. Güttel. ABBA: Adaptive Brownian bridge-based symbolic 
+aggregation of time series, MIMS Eprint 2019.$ (<url>), Manchester Institute for
 Mathematical Sciences, The University of Manchester, UK, 2019.
