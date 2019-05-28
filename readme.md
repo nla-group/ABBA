@@ -5,9 +5,9 @@ key parts: compression via an adaptive piecewise linear approximation, and
 digitization via mean-based clustering on the increments and lengths of each 
 piece. 
 
-The algorithm uses a scaling parameter scl to control the weighting of 
+The algorithm uses a scaling parameter `scl` to control the weighting of 
 the increments and lengths during the clustering.
-If scl = 0 or scl = np.inf, then a one-dimensional clustering algorithm can be
+If `scl = 0` or `scl = np.inf`, a one-dimensional clustering algorithm can be
 used. We use a modified C++ implementation of CKmeans from Ckmeans.1d.dp R
 package; see Prerequisites. If the C++ implementation is not available or a
 different scaling parameter is used, then ABBA uses the Kmeans algorithm 
@@ -16,11 +16,11 @@ from the Python package Scikit-learn.
 As an example, we consider a synthetic time series and apply ABBA's compression
 method, which approximates the time series by a sequence of linear segments 
 stitched together. Each segment can be represented by its change in the 
-x-value (len) and change in y-direction (inc).
+x-value (`len`) and change in y-direction (`inc`).
 
 ![Compression](./paper/basic_example/compression.png)
 
-ABBA's digitization procedure clusters the tuples (len, inc) and pairs, 
+ABBA's digitization procedure clusters the tuples `(len, inc)`, 
 assigning a unique symbol to each cluster.
 
 ![Digitization](./paper/basic_example/digitization0.png)
@@ -30,7 +30,7 @@ information on ABBA, see [1].
 
 ### Prerequisites
 
-If scl = 0 or scl = np.inf, then ABBA will attempt to use a C++ implementation
+If `scl = 0` or `scl = np.inf`, then ABBA will attempt to use a C++ implementation
 of the CKmeans algorithm. For this we use SWIG, an open source Simplified
 Wrapper and Interface Generator. SWIG generated a shared library and
 corresponding python file which provides a wrapper for the C++ function. SWIG
