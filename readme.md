@@ -1,11 +1,12 @@
 # ABBA
 This repository provides ABBA, an algorithm for the adaptive symbolic 
-aggregation of time series. The ABBA symbolic representation consists of two 
-key parts: compression via an adaptive piecewise linear approximation and 
+aggregation of time series. The ABBA algorithm consists of two 
+key parts: compression via an adaptive piecewise linear approximation, and 
 digitization via mean-based clustering on the increments and lengths of each 
-piece. The algorithm uses a scaling parameter scl to control the weighting of 
-the increments and lengths during the clustering.
+piece. 
 
+The algorithm uses a scaling parameter scl to control the weighting of 
+the increments and lengths during the clustering.
 If scl = 0 or scl = np.inf, then a one-dimensional clustering algorithm can be
 used. We use a modified C++ implementation of CKmeans from Ckmeans.1d.dp R
 package; see Prerequisites. If the C++ implementation is not available or a
@@ -85,5 +86,5 @@ file for details
 ## References
 
 [1] S. Elsworth and S. Güttel. ABBA: Adaptive Brownian bridge-based symbolic 
-aggregation of time series, MIMS Eprint 2019.$ (<url>), Manchester Institute for
-Mathematical Sciences, The University of Manchester, UK, 2019.
+aggregation of time series, MIMS Eprint 2019.11 (<http://eprints.maths.manchester.ac.uk/2712/>), 
+Manchester Institute for Mathematical Sciences, The University of Manchester, UK, 2019.
