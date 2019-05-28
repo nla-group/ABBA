@@ -14,6 +14,7 @@ import random
 import os
 import csv
 
+print('This example requires the UCR Classififcation Archive in the same directory as the ABBA module folder!')
 
 datadir = './../../UCRArchive_2018/'
 folder_list = ['InlineSkate', 'InspectWingbeatSound', 'LargeKitchenAppliances',

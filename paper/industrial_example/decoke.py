@@ -27,9 +27,9 @@ print('dtw(ts - ts_new) = ', dtw(ts, ts_new))
 # Plot ABBA representation
 fig, ax = plt.subplots(1, 1)
 fig, ax = mydefaults(fig, ax, s=0.9)
-plt.plot(ts)
-plt.plot(ts_con,'--')
-plt.plot(ts_new, ':')
+plt.plot(ts, color='k')
+plt.plot(ts_con, color='#D95319', linestyle='--')
+plt.plot(ts_new, color='#0072BD', linestyle=':')
 plt.xlim([1, 7200])
 plt.ylim([-2.3, 2.3])
 plt.legend(['original time series', 'reconstruction after compression', 'reconstruction after digitization'], loc=9)
@@ -48,7 +48,7 @@ for i in range(50):
     plt.plot(np.arange(.5,len(v_error)+.5,1),np.cumsum(np.random.permutation(v_error)), color='#D9D9D9')
 #plt.plot(np.cumsum(v_error), color='#0072BD', label='reconstruction error')
 plt.plot(np.arange(.5,len(v_error)+.5,1),np.cumsum(v_error), color='#0072BD', label='reconstruction error')
-         
+
 p1 = np.arange(0, len(v_error)+1)
 p2 = np.arange(len(v_error), -1, -1)
 

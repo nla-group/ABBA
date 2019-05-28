@@ -21,7 +21,7 @@ def mydefaults(fig, ax, r=0.71, s=1):
     fig.set_size_inches(s*(13.2/2.54), s*r*(13.2/2.54), forward=True)
 
     # Use tex and correct font
-    mpl.rcParams['font.family'] = 'Serif'
+    #mpl.rcParams['font.family'] = 'Serif'
     mpl.rcParams['font.serif'] = ['computer modern roman']
     #mpl.rcParams['text.usetex'] = True # makes zeros bold?
     mpl.rcParams['font.size'] = 11

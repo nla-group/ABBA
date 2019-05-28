@@ -14,8 +14,6 @@ def PerformanceProfile(A, th_max, file_name, alg_legend, n_intervals=100,
 
     fig, ax = plt.subplots(1, 1)
     fig, ax = mydefaults(fig, ax, r=0.8)
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
 
     # Use definition at some points theta
     n_intervals = 100;
@@ -38,4 +36,5 @@ def PerformanceProfile(A, th_max, file_name, alg_legend, n_intervals=100,
     plt.grid()
     if not alg_legend == None:
         plt.legend(alg_legend, loc=4)
+    plt.tight_layout()
     plt.savefig(file_name, facecolor='w', edgecolor='w')

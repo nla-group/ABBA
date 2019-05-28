@@ -24,9 +24,6 @@ ts = ts - np.mean(ts)
 ts /= np.std(ts, ddof=1)
 print('Length of time series:', len(ts))
 
-# Work around BUG
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax)
 
 # Plot compression
 fig, ax = plt.subplots(1, 1)
@@ -34,7 +31,8 @@ fig, ax = mydefaults(fig, ax, r=0.5, s=1.5)
 ax.axis([0, 230, -3, 3])
 plt.xlabel('time point')
 plt.ylabel('value')
-ax.plot(ts, linestyle='-')
+ax.plot(ts, color='k', linestyle='-')
+plt.tight_layout()
 plt.savefig('time_series.pdf')
 
 abba = ABBA(tol=0.4, scl=0, min_k=3, max_k=10, verbose=1)
@@ -52,8 +50,8 @@ fig, ax = mydefaults(fig, ax)
 ax.axis([0, 230, -3, 4.5])
 plt.xlabel('time point')
 plt.ylabel('value')
-ax.plot(ts, linestyle='-', label='original time series')
-ax.plot(APLA, linestyle='--', label='polygon chain approximation')
+ax.plot(ts, color='k', linestyle='-', label='original time series')
+ax.plot(APLA, color='#D95319', linestyle='--', label='polygonal chain approximation')
 ax.annotate('1', (pieces[0,0]/2-8, ts[0]+pieces[0,1]/2))
 ax.annotate('2', (pieces[0,0]+pieces[1,0]/2, ts[0]+pieces[0,1]+pieces[1,1]/2+0.2))
 ax.annotate('3', (np.sum(pieces[0:2,0])+pieces[2,0]/2, ts[0]+np.sum(pieces[0:2,1])+pieces[2,1]/2+0.2))
@@ -62,12 +60,13 @@ ax.annotate('5', (np.sum(pieces[0:4,0])+pieces[4,0]/2+5, ts[0]+np.sum(pieces[0:4
 ax.annotate('6', (np.sum(pieces[0:5,0])+pieces[5,0]/2+5, ts[0]+np.sum(pieces[0:5,1])+pieces[5,1]/2))
 ax.annotate('7', (np.sum(pieces[0:6,0])+pieces[6,0]/2, ts[0]+np.sum(pieces[0:6,1])+pieces[6,1]/2+0.2))
 plt.legend()
+plt.tight_layout()
 plt.savefig('compression.pdf')
 #plt.close()
 
 
 # Define colormap
-c3 = (0.6,0.839,1)
+c3 = (0.2,0.678,1)
 c1 = (0.968,0.867,0.631)
 c2 = (0.961,0.737,0.639)
 
@@ -94,6 +93,7 @@ plt.text(70, centers[2,1], 'a', ha='center', fontweight='bold', wrap=True)
 for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
+plt.tight_layout()
 plt.savefig('digitization0.pdf')
 
 # Plot digitisation with scl=1
@@ -129,6 +129,7 @@ plt.legend(loc=1)
 plt.text(centers[0,0], centers[0,1]+1.2, 'b', ha='center', fontweight='bold', wrap=True)
 plt.text(centers[1,0], centers[1,1]+1.2, 'a', ha='center', fontweight='bold', wrap=True)
 plt.text(centers[2,0], centers[2,1]+1.2, 'c', ha='center', fontweight='bold', wrap=True)
+plt.tight_layout()
 plt.savefig('digitization1.pdf')
 
 
@@ -154,4 +155,5 @@ plt.text(centers[2,0], -4, 'c', ha='center', fontweight='bold', wrap=True)
 for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
+plt.tight_layout()
 plt.savefig('digitizationinf.pdf')

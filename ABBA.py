@@ -512,12 +512,15 @@ class ABBA(object):
         -------
         pieces: Time series in compressed representation with window length adjusted to integer grid.
         """
-        for p in range(len(pieces)-1):
-            corr = round(pieces[p,0]) - pieces[p,0]
-            pieces[p,0] = round(pieces[p,0] + corr)
-            pieces[p+1,0] = pieces[p+1,0] - corr
-            if pieces[p,0] == 0:
-                pieces[p,0] = 1
-                pieces[p+1,0] -= 1
-        pieces[-1,0] = round(pieces[-1,0])
+        if len(pieces) == 1:
+            pieces[0,0] = round(pieces[0,0])
+        else:
+            for p in range(len(pieces)-1):
+                corr = round(pieces[p,0]) - pieces[p,0]
+                pieces[p,0] = round(pieces[p,0] + corr)
+                pieces[p+1,0] = pieces[p+1,0] - corr
+                if pieces[p,0] == 0:
+                    pieces[p,0] = 1
+                    pieces[p+1,0] -= 1
+            pieces[-1,0] = round(pieces[-1,0])
         return pieces
