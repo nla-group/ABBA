@@ -11,7 +11,7 @@ class ABBA(object):
     ----------
     tol - float/ list
         Tolerance used during compression and digitization. Accepts either float
-        of list of length two. If float given then same tolerance used for both
+        or a list of length two. If float given then same tolerance used for both
         compression and digitization. If list given then first element used for
         compression and second element for digitization.
 
@@ -56,7 +56,8 @@ class ABBA(object):
     References
     ------
     [1] S. Elsworth and S. Güttel. ABBA: Aggregate Brownian bridge-based
-    approximation of time series, MIMS Eprint 2019.$ (<url>), Manchester
+    approximation of time series, MIMS Eprint 2019.11  
+    (http://eprints.maths.manchester.ac.uk/2712/), Manchester
     Institute for Mathematical Sciences, The University of Manchester, UK, 2019.
     """
 
@@ -82,7 +83,7 @@ class ABBA(object):
 
     def transform(self, time_series):
         """
-        Convert time series representtation to ABBA symbolic representation
+        Convert time series representation to ABBA symbolic representation
 
         Parameters
         ----------
@@ -96,7 +97,7 @@ class ABBA(object):
             with character 'a'.
 
         centers - numpy array
-            Centres of clusters from clustering algorithm. Each centre corresponds
+            Centres of clusters from clustering algorithm. Each center corresponds
             to character in string.
 
         """
@@ -150,7 +151,7 @@ class ABBA(object):
 
     def inverse_transform(self, string, centers, start=0):
         """
-        Convert ABBA symbolic representation back to time series representation.
+        Convert ABBA symbolic representation back to numeric time series representation.
 
         Parameters
         ----------
@@ -159,7 +160,7 @@ class ABBA(object):
             with character 'a'.
 
         centers - numpy array
-            Centres of clusters from clustering algorithm. Each centre corresponds
+            Centers of clusters from clustering algorithm. Each center corresponds
             to character in string.
 
         start - float
@@ -261,7 +262,7 @@ class ABBA(object):
             List of ints corresponding to cluster labels from k-means.
 
         centers - numpy array
-            centers of clusters from clustering algorithm. Each centre corresponds
+            centers of clusters from clustering algorithm. Each center corresponds
             to character in string.
 
         k - int
@@ -271,7 +272,7 @@ class ABBA(object):
         Returns
         -------
         variance - float
-            Largets variance among clusters from k-means.
+            Largest variance among clusters from k-means.
         """
         d1 = [0] # direction 1
         d2 = [0] # direction 2
@@ -294,7 +295,7 @@ class ABBA(object):
 
     def _build_centers(self, pieces, labels, c1, k, col):
         """
-        utility function for digitize, helps build 2d cluster centres after 1d clustering.
+        utility function for digitize, helps build 2d cluster centers after 1d clustering.
 
         Parameters
         ----------
