@@ -37,6 +37,11 @@ class ABBA(object):
         1 - Print key information
         2 - Print all important information
 
+    seed - True/False
+        Determine random number generator for centroid initialization during
+        sklearn KMeans algorithm. If True, then randomness is deterministic and
+        ABBA produces same representation (with fixed parameters) run by run.
+
     Raises
     ------
     ValueError: Invalid tol, Invalid scl, Invalid min_k, len(pieces)<min_k.
@@ -56,18 +61,19 @@ class ABBA(object):
     References
     ------
     [1] S. Elsworth and S. Güttel. ABBA: Aggregate Brownian bridge-based
-    approximation of time series, MIMS Eprint 2019.11  
+    approximation of time series, MIMS Eprint 2019.11
     (http://eprints.maths.manchester.ac.uk/2712/), Manchester
     Institute for Mathematical Sciences, The University of Manchester, UK, 2019.
     """
 
-    def __init__(self, tol=0.1, scl=0, min_k=2, max_k=100, max_len = np.inf, verbose=1):
+    def __init__(self, tol=0.1, scl=0, min_k=2, max_k=100, max_len = np.inf, verbose=1, seed=True):
         self.tol = tol
         self.scl = scl
         self.min_k = min_k
         self.max_k = max_k
         self.max_len = max_len
         self.verbose = verbose
+        self.seed = seed
         self._check_parameters()
 
         # Import Cpp wrapper
@@ -148,6 +154,8 @@ class ABBA(object):
         if self.verbose not in [0, 1, 2]:
             self.verbose == 1 # set to default
             print('Invalid verbose, setting to default')
+
+
 
     def inverse_transform(self, string, centers, start=0):
         """
@@ -432,7 +440,10 @@ class ABBA(object):
                 while k <= self.max_k-1 and (error > bound):
                     k += 1
                     # tol=0 ensures labels and centres coincide
-                    kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                    if self.seed:
+                        kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
+                    else:
+                        kmeans = KMeans(n_clusters=k, tol=0).fit(data)
                     centers = kmeans.cluster_centers_
                     labels = kmeans.labels_
                     error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
