@@ -488,8 +488,8 @@ class ABBA(object):
         # Order cluster centres so 'a' is the most populated cluster, and so forth.
         new_to_old = [0] * k
         counter = collections.Counter(labels)
-        for el, ind in enumerate(counter):
-            new_to_old[ind] = el
+        for ind, el in enumerate(counter.most_common()):
+            new_to_old[ind] = el[0]
 
         # invert permutation
         old_to_new = [0] * k
