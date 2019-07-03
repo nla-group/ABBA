@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from copy import deepcopy
 import warnings
+import collections
 
 class ABBA(object):
     """
@@ -424,6 +425,8 @@ class ABBA(object):
             if self.verbose in [1, 2]:
                 print('Digitization: Using', output.Kopt, 'symbols')
 
+            k = output.Kopt
+
         # Use Kmeans
         else:
             if self.scl == np.inf:
@@ -482,9 +485,21 @@ class ABBA(object):
                 centers[:,0] /= self.scl # reverse scaling
                 centers[:,1] *= inc_std
 
+        # Order cluster centres so 'a' is the most populated cluster, and so forth.
+        new_to_old = [0] * k
+        counter = collections.Counter(labels)
+        for el, ind in enumerate(counter):
+            new_to_old[ind] = el
+
+        # invert permutation
+        old_to_new = [0] * k
+        for i, p in enumerate(new_to_old):
+            old_to_new[p] = i
+
         # Convert labels to string
-        string = ''.join([ chr(97 + j) for j in labels ])
-        return string, centers
+        string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
+        return string, centers[new_to_old, :]
+
 
     def inverse_digitize(self, string, centers):
         """
