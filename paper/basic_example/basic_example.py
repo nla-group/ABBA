@@ -62,6 +62,7 @@ ax.annotate('7', (np.sum(pieces[0:6,0])+pieces[6,0]/2, ts[0]+np.sum(pieces[0:6,1
 plt.legend()
 plt.tight_layout()
 plt.savefig('compression.pdf')
+plt.savefig('compression.png')
 #plt.close()
 
 
@@ -76,8 +77,8 @@ fig, ax = mydefaults(fig, ax)
 ax.axis([0, 80, -8, 6])
 plt.xlabel('length')
 plt.ylabel('increment')
-split1 = (centers[0,1] + centers[1,1])/2
-split2 = (centers[1,1] + centers[2,1])/2
+split1 = (centers[1,1] + centers[2,1])/2
+split2 = (centers[0,1] + centers[1,1])/2
 len = 81
 #ax.fill_between(np.arange(0, len), [6]*len, [split2]*len, facecolor='none', hatch=2*'X', edgecolor=(0.961,0.737,0.639), linewidth=0.0)
 #ax.fill_between(np.arange(0, len), [split2]*len, [split1]*len, facecolor='none', linewidth=0.0)
@@ -87,14 +88,15 @@ ax.fill_between(np.arange(0, len), [split2]*len, [split1]*len, facecolor=c1, lin
 ax.fill_between(np.arange(0, len), [split1]*len, [-8]*len, facecolor=c3, linewidth=0.0)
 plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 30, label='pieces')
 plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 20, label='cluster centers')
-plt.text(70, centers[0,1], 'c', ha='center', fontweight='bold', wrap=True)
+plt.text(70, centers[0,1], 'a', ha='center', fontweight='bold', wrap=True)
 plt.text(70, centers[1,1], 'b', ha='center', fontweight='bold', wrap=True)
-plt.text(70, centers[2,1], 'a', ha='center', fontweight='bold', wrap=True)
+plt.text(70, centers[2,1], 'c', ha='center', fontweight='bold', wrap=True)
 for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
 plt.tight_layout()
 plt.savefig('digitization0.pdf')
+plt.savefig('digitization0.png')
 
 # Plot digitisation with scl=1
 abba = ABBA(tol=0.4, scl=1, min_k=3, max_k=10, verbose=1)
@@ -126,8 +128,8 @@ plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 20, label='clus
 for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
-plt.text(centers[0,0], centers[0,1]+1.2, 'b', ha='center', fontweight='bold', wrap=True)
-plt.text(centers[1,0], centers[1,1]+1.2, 'a', ha='center', fontweight='bold', wrap=True)
+plt.text(centers[0,0], centers[0,1]+1.2, 'a', ha='center', fontweight='bold', wrap=True)
+plt.text(centers[1,0], centers[1,1]+1.2, 'b', ha='center', fontweight='bold', wrap=True)
 plt.text(centers[2,0], centers[2,1]+1.2, 'c', ha='center', fontweight='bold', wrap=True)
 plt.tight_layout()
 plt.savefig('digitization1.pdf')
