@@ -156,8 +156,6 @@ class ABBA(object):
             self.verbose == 1 # set to default
             print('Invalid verbose, setting to default')
 
-
-
     def inverse_transform(self, string, centers, start=0):
         """
         Convert ABBA symbolic representation back to numeric time series representation.
@@ -551,3 +549,207 @@ class ABBA(object):
                     pieces[p+1,0] -= 1
             pieces[-1,0] = round(pieces[-1,0])
         return pieces
+    
+    def digitize_inc(pieces, ctol=.1, weighted=True, symmetric=True):
+    """
+    Convert compressed representation to symbolic representation using 1D clustering.
+    This method clusters only the increments of the pieces and is greedy.
+    It is tolerance driven.
+
+    Parameters
+    ----------
+    pieces - numpy array
+        Time series in compressed format. See compression.
+        
+    ctol - float
+        Tolerance used for the clustering.
+
+    Returns
+    -------
+    string - string
+        Time series in symbolic representation using unicode characters starting
+        with character 'a'.
+
+    centers - numpy array
+        centers of clusters from clustering algorithm. Each centre corresponds
+        to a character in string.
+    """
+    
+    if len(pieces)==1:
+        return 'a', np.array([[pieces[0,0],pieces[0,1]]])
+    
+    lens = pieces[:,0] # length values
+    incs = pieces[:,1] # increment values
+
+    centers = np.zeros((0,2))
+    labels = -np.ones((len(incs),1))
+
+    if symmetric:
+        ind = np.argsort(abs(incs))
+    else:
+        ind = np.argsort(incs)
+
+    k = 0 # counter for clusters
+    inds = 0    # given accepted cluster 
+    inde = 0    
+    mval = incs[ind[inds]] 
+
+    last_sign = np.sign(mval)  # as soon as there is a cluster having a sign change in increments
+    sign_change = False        # we have covered the point zero. from that on we should work 
+    sign_sorted = False        # incrementally in the positive and negative direction
+    
+    while inde < len(incs):
+
+        #print('inds, inde = ', inds, inde)
+        
+        if inde == len(incs)-1:
+            #print('final')
+            old_mval = mval
+            nrmerr = np.inf
+        else:
+            # try to add another point to cluster
+            vals = incs[np.sort(ind[inds:inde+2])]
+            
+            if np.sign(incs[ind[inde+1]]) != last_sign: # added point has different sign
+                sign_change = True
+                
+            ell = inde-inds+2 # number of points in new test cluster
+            #print('tried raw vals and ell: ', vals,ell)
+
+            old_mval = mval
+            if weighted: # minimize accumulated increment errors
+                wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
+                wvals = vals*wgths
+                mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
+                err = np.cumsum(vals) - np.arange(1,ell+1)*mval
+                
+            else: # minimize nonaccumulated increment errors
+                mval = np.sum(vals)/ell # standard mean
+                err = vals - np.ones((1,ell))*mval
+
+            nrmerr = np.linalg.norm(err)**2
+
+        if nrmerr < (ell)*ctol**2 and inde+1<len(incs):   # accept enlarged cluster 
+            inde += 1
+            
+        else: 
+            mlen = np.mean(lens[ind[inds:inde+1]])
+            labels[ind[inds:inde+1],0] = k
+
+            centers = np.append(centers, np.array([[mlen, old_mval]]), axis = 0)
+
+            if symmetric and not sign_sorted and sign_change:
+                ind1 = ind[inde+1:]
+                lst = incs[ind1]
+                ind2 = np.lexsort((np.abs(lst),np.sign(lst)))
+                ind[inde+1:] = ind1[ind2]
+                sign_sorted = True
+            
+            k += 1
+            #print('mean length and increment:', mlen, old_mval)
+            inds = inde+1
+            inde = inds
+            
+            if inds < len(incs):
+                mval = incs[ind[inds]] 
+
+    string = ''.join([ chr(97 + j) for j in labels])
+    print('Digitization_inc: Using', k, 'symbols.')    
+    return string, centers
+
+    def get_patches(ts, pieces, string, centers):
+    """
+    Creates a dictionary of patches from time series data using the clustering result.
+
+    Parameters
+    ----------
+    ts - numpy array
+        Original time series.
+        
+    pieces - numpy array
+        Time series in compressed format.
+
+    string - string
+        Time series in symbolic representation using unicode characters starting
+        with character 'a'.
+
+    centers - numpy array
+        centers of clusters from clustering algorithm. Each centre corresponds
+        to a character in string.
+        
+    Returns
+    -------
+    patches - dict
+        A dictionary of time series patches.
+    """
+    
+    patches = dict()
+    inds = 0
+    for j in range(len(pieces)):
+        let = string[j]                           # letter
+        lab = ord(string[j])-97                   # label (integer)
+        lgt = round(centers[lab,0])               # patch length
+        inc = centers[lab,1]                      # patch increment
+        inde = inds + int(pieces[j,0]);
+        tsp = ts[inds:inde+1]                      # time series patch
+
+        tsp = tsp - (tsp[-1]-tsp[0]-inc)/2-tsp[0]  # shift patch so that it is vertically centered with patch increment
+
+        tspi = np.interp(np.linspace(0,1,lgt+1), np.linspace(0,1,len(tsp)), tsp)
+        if let in patches:
+            patches[let] = np.append(patches[let], np.array([tspi]), axis = 0)
+        else:
+            patches[let] = np.array([ tspi ])
+        inds = inde
+    return patches
+
+def plot_patches(patches, string, centers, ts0=0, xoffset=0):
+    """
+    Plot stitched patches.
+
+    Parameters
+    ----------
+    patches - dict
+        Dictionary of patches as returned by get_patches.
+    
+    string - string
+        Time series in symbolic representation using unicode characters starting
+        with character 'a'.
+
+    centers - numpy array
+        centers of clusters from clustering algorithm. Each centre corresponds
+        to a character in string.
+        
+    ts0 - float
+        First time series value (default 0).
+    
+    xoffset - float
+        Start index on x-axis for plotting (default 0)
+    """
+    inds = xoffset
+    val = ts0
+    for j in range(len(string)):
+        let = string[j]                           # letter
+        lab = ord(string[j])-97                   # label (integer)
+        lgt = round(centers[lab,0])               # patch length
+        inc = centers[lab,1]                      # patch increment
+        inde = inds + lgt
+        xp = np.arange(inds,inde+1,1)             # time series x-vals
+        plt.plot(xp,patches[let].T+val,'k-',color=(0.8, 0.8, 0.8));
+        val = val + inc
+        inds = inde
+        
+    # now plot solid polygon on top
+    inds = xoffset
+    val = ts0
+    for j in range(len(string)):
+        let = string[j]                           # letter
+        lab = ord(string[j])-97                   # label (integer)
+        lgt = round(centers[lab,0])               # patch length
+        inc = centers[lab,1]                      # patch increment
+        inde = inds + lgt
+        xp = np.arange(inds,inde+1,1)             # time series x-vals
+        plt.plot([inds,inde],[val,val+inc],'b-')
+        val = val + inc
+        inds = inde
+
