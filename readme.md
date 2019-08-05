@@ -1,26 +1,26 @@
 # ABBA
-This repository provides ABBA, an algorithm for the adaptive symbolic 
-aggregation of time series. The ABBA algorithm consists of two 
-key parts: compression via an adaptive piecewise linear approximation, and 
-digitization via mean-based clustering on the increments and lengths of each 
-piece. 
+This repository provides ABBA, an algorithm for the adaptive symbolic
+aggregation of time series. The ABBA algorithm consists of two
+key parts: compression via an adaptive piecewise linear approximation, and
+digitization via mean-based clustering on the increments and lengths of each
+piece.
 
-The algorithm uses a scaling parameter `scl` to control the weighting of 
+The algorithm uses a scaling parameter `scl` to control the weighting of
 the increments and lengths during the clustering.
 If `scl = 0` or `scl = np.inf`, a one-dimensional clustering algorithm can be
 used. We use a modified C++ implementation of CKmeans from Ckmeans.1d.dp R
 package; see Prerequisites. If the C++ implementation is not available or a
-different scaling parameter is used, then ABBA uses the Kmeans algorithm 
+different scaling parameter is used, then ABBA uses the Kmeans algorithm
 from the Python package Scikit-learn.
 
 As an example, we consider a synthetic time series and apply ABBA's compression
-method, which approximates the time series by a sequence of linear segments 
-stitched together. Each segment can be represented by its change in the 
+method, which approximates the time series by a sequence of linear segments
+stitched together. Each segment can be represented by its change in the
 x-value (`len`) and change in y-direction (`inc`).
 
 ![Compression](./paper/basic_example/compression.png)
 
-ABBA's digitization procedure clusters the tuples `(len, inc)`, 
+ABBA's digitization procedure clusters the tuples `(len, inc)`,
 assigning a unique symbol to each cluster.
 
 ![Digitization](./paper/basic_example/digitization0.png)
@@ -29,6 +29,10 @@ The symbolic representation of the time series is 'abbacab'. For further
 information on ABBA, see [1].
 
 ### Prerequisites
+Install python packages:
+```
+pip install -r requirements.txt
+```
 
 If `scl = 0` or `scl = np.inf`, then ABBA will attempt to use a C++ implementation
 of the CKmeans algorithm. For this we use SWIG, an open source Simplified
@@ -85,6 +89,6 @@ file for details
 
 ## References
 
-[1] S. Elsworth and S. Güttel. ABBA: Adaptive Brownian bridge-based symbolic 
-aggregation of time series, MIMS Eprint 2019.11 (<http://eprints.maths.manchester.ac.uk/2712/>), 
+[1] S. Elsworth and S. Güttel. ABBA: Adaptive Brownian bridge-based symbolic
+aggregation of time series, MIMS Eprint 2019.11 (<http://eprints.maths.manchester.ac.uk/2712/>),
 Manchester Institute for Mathematical Sciences, The University of Manchester, UK, 2019.

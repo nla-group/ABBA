@@ -1,0 +1,3 @@
+numpy==1.14.5
+sklearn==0.19.2
+tslearn==0.1.22
