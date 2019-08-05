@@ -35,6 +35,9 @@ class ABBA(object):
         Determine random number generator for centroid initialization during
         sklearn KMeans algorithm. If True, then randomness is deterministic and
         ABBA produces same representation (with fixed parameters) run by run.
+    norm - 1 or 2
+        Which norm to use for the compression phase. Also used by digitize_inc,
+        a greedy clustering approach.
     Raises
     ------
     ValueError: Invalid tol, Invalid scl, Invalid min_k, len(pieces)<min_k.
@@ -515,29 +518,56 @@ class ABBA(object):
             pieces[-1,0] = round(pieces[-1,0])
         return pieces
     
-    def digitize_inc(self, pieces, ctol=.1, weighted=True, symmetric=True):
+    def digitize_inc(self, pieces, *, weighted=True, symmetric=True):
         """
         Convert compressed representation to symbolic representation using 1D clustering.
         This method clusters only the increments of the pieces and is greedy.
         It is tolerance driven.
+    
         Parameters
         ----------
         pieces - numpy array
             Time series in compressed format. See compression.
-            
-        ctol - float
-            Tolerance used for the clustering.
+    
         Returns
         -------
         string - string
             Time series in symbolic representation using unicode characters starting
             with character 'a'.
+    
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
-            to a character in string."""
-    
+            to a character in string.
+        """
+        
+        def weighted_median(data, weights):
+            """
+            Args:
+              data (list or numpy.array): data
+              weights (list or numpy.array): weights
+            Taken from https://gist.github.com/tinybike/d9ff1dad515b66cc0d87
+            """
+            data, weights = np.array(data).squeeze(), np.array(weights).squeeze()
+            s_data, s_weights = map(np.array, zip(*sorted(zip(data, weights))))
+            midpoint = 0.5 * sum(s_weights)
+            if any(weights > midpoint):
+                w_median = (data[weights == np.max(weights)])[0]
+            else:
+                cs_weights = np.cumsum(s_weights)
+                idx = np.where(cs_weights <= midpoint)[0][-1]
+                if cs_weights[idx] == midpoint:
+                    w_median = np.mean(s_data[idx:idx+2])
+                else:
+                    w_median = s_data[idx+1]
+            return w_median
+        
         if len(pieces)==1:
             return 'a', np.array([[pieces[0,0],pieces[0,1]]])
+        
+        if self.norm==2:
+            tol = self.tol**2
+        else:
+            tol = self.tol 
         
         lens = pieces[:,0] # length values
         incs = pieces[:,1] # increment values
@@ -560,8 +590,6 @@ class ABBA(object):
         sign_sorted = False        # incrementally in the positive and negative direction
         
         while inde < len(incs):
-    
-            #print('inds, inde = ', inds, inde)
             
             if inde == len(incs)-1:
                 #print('final')
@@ -575,22 +603,33 @@ class ABBA(object):
                     sign_change = True
                     
                 ell = inde-inds+2 # number of points in new test cluster
-                #print('tried raw vals and ell: ', vals,ell)
-    
                 old_mval = mval
-                if weighted: # minimize accumulated increment errors
+                
+                if weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
+                    wgts = np.arange(1,ell+1)
+                    wvals = np.cumsum(vals)/wgts
+                    mval = weighted_median(wvals, wgts)
+                    err = np.cumsum(vals) - np.arange(1,ell+1)*mval
+                    nrmerr = np.linalg.norm(err,1)
+                    
+                if weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
                     wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
                     wvals = vals*wgths
                     mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
                     err = np.cumsum(vals) - np.arange(1,ell+1)*mval
+                    nrmerr = np.linalg.norm(err)**2
                     
-                else: # minimize nonaccumulated increment errors
-                    mval = np.sum(vals)/ell # standard mean
+                if not weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
+                    mval = np.median(vals)   # standard median
                     err = vals - np.ones((1,ell))*mval
-    
-                nrmerr = np.linalg.norm(err)**2
-    
-            if nrmerr < (ell)*ctol**2 and inde+1<len(incs):   # accept enlarged cluster 
+                    nrmerr = np.linalg.norm(err,1)
+                    
+                if not weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
+                    mval = np.sum(vals)/ell  # standard mean
+                    err = vals - np.ones((1,ell))*mval
+                    nrmerr = np.linalg.norm(err)**2
+                
+            if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster 
                 inde += 1
                 
             else: 
@@ -607,7 +646,6 @@ class ABBA(object):
                     sign_sorted = True
                 
                 k += 1
-                #print('mean length and increment:', mlen, old_mval)
                 inds = inde+1
                 inde = inds
                 
@@ -672,6 +710,7 @@ class ABBA(object):
         string - string
             Time series in symbolic representation using unicode characters starting
             with character 'a'.
+            
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
             to a character in string.
