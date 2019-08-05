@@ -518,7 +518,7 @@ class ABBA(object):
             pieces[-1,0] = round(pieces[-1,0])
         return pieces
     
-    def digitize_inc(self, pieces, *, weighted=True, symmetric=True):
+    def digitize_inc(self, pieces, *, tol=None, weighted=True, symmetric=True):
         """
         Convert compressed representation to symbolic representation using 1D clustering.
         This method clusters only the increments of the pieces and is greedy.
@@ -564,10 +564,11 @@ class ABBA(object):
         if len(pieces)==1:
             return 'a', np.array([[pieces[0,0],pieces[0,1]]])
         
-        if self.norm==2:
-            tol = self.tol**2
-        else:
-            tol = self.tol 
+        if tol is None:
+            if self.norm==2:
+                tol = self.tol**2
+            else:
+                tol = self.tol 
         
         lens = pieces[:,0] # length values
         incs = pieces[:,1] # increment values
