@@ -110,7 +110,7 @@ class ABBA(object):
         # Convert time series to numpy array
         time_series_ = np.array(time_series)
 
-        # Check normalisation if Normalise=False and Verbose
+        # Check normalisation if Verbose
         if self.verbose == 2:
             if np.mean(time_series_) > np.finfo(float).eps:
                 print('Warning: Time series does not have zero mean.')
@@ -197,10 +197,10 @@ class ABBA(object):
         while end < len(time_series):
             # error function for linear piece
             inc = time_series[end] - time_series[start]
-            
+
             if self.norm == 2:
                 err = np.linalg.norm((time_series[start] + (inc/(end-start))*x[0:end-start+1]) - time_series[start:end+1])**2
-            else: 
+            else:
                 err = np.linalg.norm((time_series[start] + (inc/(end-start))*x[0:end-start+1]) - time_series[start:end+1],1)
 
             if (err <= tol*(end-start-1) + epsilon) and (end-start-1 < self.max_len):
@@ -517,29 +517,29 @@ class ABBA(object):
                     pieces[p+1,0] -= 1
             pieces[-1,0] = round(pieces[-1,0])
         return pieces
-    
+
     def digitize_inc(self, pieces, *, tol=None, weighted=True, symmetric=True):
         """
         Convert compressed representation to symbolic representation using 1D clustering.
         This method clusters only the increments of the pieces and is greedy.
         It is tolerance driven.
-    
+
         Parameters
         ----------
         pieces - numpy array
             Time series in compressed format. See compression.
-    
+
         Returns
         -------
         string - string
             Time series in symbolic representation using unicode characters starting
             with character 'a'.
-    
+
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
             to a character in string.
         """
-        
+
         def weighted_median(data, weights):
             """
             Args:
@@ -560,38 +560,38 @@ class ABBA(object):
                 else:
                     w_median = s_data[idx+1]
             return w_median
-        
+
         if len(pieces)==1:
             return 'a', np.array([[pieces[0,0],pieces[0,1]]])
-        
+
         if tol is None:
             if self.norm==2:
                 tol = self.tol**2
             else:
-                tol = self.tol 
-        
+                tol = self.tol
+
         lens = pieces[:,0] # length values
         incs = pieces[:,1] # increment values
-    
+
         centers = np.zeros((0,2))
         labels = -np.ones((len(incs),1))
-    
+
         if symmetric:
             ind = np.argsort(abs(incs))
         else:
             ind = np.argsort(incs)
-    
+
         k = 0 # counter for clusters
-        inds = 0    # given accepted cluster 
-        inde = 0    
-        mval = incs[ind[inds]] 
-    
+        inds = 0    # given accepted cluster
+        inde = 0
+        mval = incs[ind[inds]]
+
         last_sign = np.sign(mval)  # as soon as there is a cluster having a sign change in increments
-        sign_change = False        # we have covered the point zero. from that on we should work 
+        sign_change = False        # we have covered the point zero. from that on we should work
         sign_sorted = False        # incrementally in the positive and negative direction
-        
+
         while inde < len(incs):
-            
+
             if inde == len(incs)-1:
                 #print('final')
                 old_mval = mval
@@ -599,62 +599,62 @@ class ABBA(object):
             else:
                 # try to add another point to cluster
                 vals = incs[np.sort(ind[inds:inde+2])]
-                
+
                 if np.sign(incs[ind[inde+1]]) != last_sign: # added point has different sign
                     sign_change = True
-                    
+
                 ell = inde-inds+2 # number of points in new test cluster
                 old_mval = mval
-                
+
                 if weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
                     wgts = np.arange(1,ell+1)
                     wvals = np.cumsum(vals)/wgts
                     mval = weighted_median(wvals, wgts)
                     err = np.cumsum(vals) - np.arange(1,ell+1)*mval
                     nrmerr = np.linalg.norm(err,1)
-                    
+
                 if weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
                     wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
                     wvals = vals*wgths
                     mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
                     err = np.cumsum(vals) - np.arange(1,ell+1)*mval
                     nrmerr = np.linalg.norm(err)**2
-                    
+
                 if not weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
                     mval = np.median(vals)   # standard median
                     err = vals - np.ones((1,ell))*mval
                     nrmerr = np.linalg.norm(err,1)
-                    
+
                 if not weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
                     mval = np.sum(vals)/ell  # standard mean
                     err = vals - np.ones((1,ell))*mval
                     nrmerr = np.linalg.norm(err)**2
-                
-            if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster 
+
+            if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster
                 inde += 1
-                
-            else: 
+
+            else:
                 mlen = np.mean(lens[ind[inds:inde+1]])
                 labels[ind[inds:inde+1],0] = k
-    
+
                 centers = np.append(centers, np.array([[mlen, old_mval]]), axis = 0)
-    
+
                 if symmetric and not sign_sorted and sign_change:
                     ind1 = ind[inde+1:]
                     lst = incs[ind1]
                     ind2 = np.lexsort((np.abs(lst),np.sign(lst)))
                     ind[inde+1:] = ind1[ind2]
                     sign_sorted = True
-                
+
                 k += 1
                 inds = inde+1
                 inde = inds
-                
+
                 if inds < len(incs):
-                    mval = incs[ind[inds]] 
-    
+                    mval = incs[ind[inds]]
+
         string = ''.join([ chr(97 + j) for j in labels])
-        print('Digitization_inc: Using', k, 'symbols.')    
+        print('Digitization_inc: Using', k, 'symbols.')
         return string, centers
 
     def get_patches(self, ts, pieces, string, centers):
@@ -664,7 +664,7 @@ class ABBA(object):
         ----------
         ts - numpy array
             Original time series.
-            
+
         pieces - numpy array
             Time series in compressed format.
         string - string
@@ -673,13 +673,13 @@ class ABBA(object):
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
             to a character in string.
-            
+
         Returns
         -------
         patches - dict
             A dictionary of time series patches.
         """
-        
+
         patches = dict()
         inds = 0
         for j in range(len(pieces)):
@@ -689,9 +689,9 @@ class ABBA(object):
             inc = centers[lab,1]                      # patch increment
             inde = inds + int(pieces[j,0]);
             tsp = ts[inds:inde+1]                      # time series patch
-    
+
             tsp = tsp - (tsp[-1]-tsp[0]-inc)/2-tsp[0]  # shift patch so that it is vertically centered with patch increment
-    
+
             tspi = np.interp(np.linspace(0,1,lgt+1), np.linspace(0,1,len(tsp)), tsp)
             if let in patches:
                 patches[let] = np.append(patches[let], np.array([tspi]), axis = 0)
@@ -707,18 +707,18 @@ class ABBA(object):
         ----------
         patches - dict
             Dictionary of patches as returned by get_patches.
-        
+
         string - string
             Time series in symbolic representation using unicode characters starting
             with character 'a'.
-            
+
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
             to a character in string.
-            
+
         ts0 - float
             First time series value (default 0).
-        
+
         xoffset - float
             Start index on x-axis for plotting (default 0)
         """
@@ -735,7 +735,7 @@ class ABBA(object):
             plt.plot(xp,patches[let].T+val,'k-',color=(0.8, 0.8, 0.8));
             val = val + inc
             inds = inde
-            
+
         # now plot solid polygon on top
         inds = xoffset
         val = ts0
