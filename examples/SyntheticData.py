@@ -1,8 +1,3 @@
-"""
-Example illustrates:
-    - default parameters on variety of time series
-"""
-
 import sys
 sys.path.append('./..')
 import numpy as np

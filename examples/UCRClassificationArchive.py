@@ -1,8 +1,3 @@
-"""
-Example illustrates:
-    - how compression tol and digitization tol effect ABBA compression
-"""
-
 import sys
 sys.path.append('./..')
 import numpy as np
