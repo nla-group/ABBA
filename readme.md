@@ -55,6 +55,11 @@ Once installed, the Python wrapper can be constructed using the makefile.
 make
 ```
 
+## Testing
+Run the unit tests by the following command:
+```
+python test_ABBA.py -v
+```
 
 ## Example
 
