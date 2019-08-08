@@ -402,6 +402,73 @@ class test_ABBA(unittest.TestCase):
         ee2 = max([np.var([4,-5,1]), np.var([4,-4])])
         self.assertTrue(np.allclose([e1, e2], [ee1, ee2]))
 
+    #--------------------------------------------------------------------------#
+    # digitize_inc
+    #--------------------------------------------------------------------------#
+    @ignore_warnings
+    def test_DigitizeInc_NotWeightedNotSymmetricOneNorm(self):
+        """
+        Test digitize_inc with weighted=False and symmetric=False and 1 norm
+        """
+        pieces = [[1, -5],
+                  [2, 0],
+                  [1, -6],
+                  [2, 2],
+                  [1, -4],
+                  [1, 3],
+                  [4, 8]]
+        pieces = np.array(pieces).astype(float)
+        abba = ABBA(verbose=0, norm=1)
+        string, centers = abba.digitize_inc(pieces, tol=2/3+1e-10, weighted=False, symmetric=False)
+        correct_centers = [[1, -5],
+                           [5/3, 2],
+                           [4, 8]]
+        correct_centers = np.array(correct_centers)
+        self.assertTrue(np.allclose(centers, correct_centers))
+
+    @ignore_warnings
+    def test_DigitizeInc_NotWeightedNotSymmetricTwoNorm(self):
+        """
+        Test digitize_inc with weighted=False and symmetric=False and 2 norm
+        """
+        pieces = [[1, -5],
+                  [2, 0],
+                  [1, -6],
+                  [2, 2],
+                  [1, -4],
+                  [1, 3],
+                  [4, 8]]
+        pieces = np.array(pieces).astype(float)
+        abba = ABBA(verbose=0, norm=2)
+        string, centers = abba.digitize_inc(pieces, tol=42/27+1e-10, weighted=False, symmetric=False)
+        correct_centers = [[1, -5],
+                           [5/3, 5/3],
+                           [4, 8]]
+        correct_centers = np.array(correct_centers)
+        self.assertTrue(np.allclose(centers, correct_centers))
+
+    @ignore_warnings
+    def test_DigitizeInc_WeightedNotSymmetricOneNorm(self):
+        """
+        Test digitize_inc with weighted=True and symmetric=False and 1 norm
+        """
+        pieces = [[1, -5],
+                  [2, 0],
+                  [1, -6],
+                  [2, 2],
+                  [1, -4],
+                  [1, 3],
+                  [4, 8]]
+        pieces = np.array(pieces).astype(float)
+        abba = ABBA(verbose=0, norm=1)
+        string, centers = abba.digitize_inc(pieces, tol=2/3+1e-10, weighted=True, symmetric=False)
+        print(centers)
+        correct_centers = [[1, -5],
+                           [5/3, 5/3],
+                           [4, 8]]
+        correct_centers = np.array(correct_centers)
+        #self.assertTrue(np.allclose(centers, correct_centers))
+
 
 if __name__ == "__main__":
     unittest.main()

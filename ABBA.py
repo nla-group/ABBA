@@ -630,6 +630,7 @@ class ABBA(object):
                     err = vals - np.ones((1,ell))*mval
                     nrmerr = np.linalg.norm(err)**2
 
+            print(ell, nrmerr, ell*tol)
             if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster
                 inde += 1
 
@@ -654,7 +655,8 @@ class ABBA(object):
                     mval = incs[ind[inds]]
 
         string = ''.join([ chr(97 + j) for j in labels])
-        print('Digitization_inc: Using', k, 'symbols.')
+        if self.verbose in [1, 2]:
+            print('Digitization_inc: Using', k, 'symbols.')
         return string, centers
 
     def get_patches(self, ts, pieces, string, centers):
