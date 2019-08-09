@@ -3,9 +3,10 @@ sys.path.append('./..')
 import numpy as np
 np.random.seed(0)
 import matplotlib.pyplot as plt
+%matplotlib inline
 from ABBA import ABBA
 
-
+# %%
 # Noise
 #-----------------------------------------------------------------------------#
 ts = np.random.randn(1, 100)[0]
@@ -23,7 +24,7 @@ plt.legend(['original', 'ABBA'], fontsize=18)
 plt.title('Noise', fontsize=18)
 plt.show()
 
-
+# %%
 # Flat with spikes
 #-----------------------------------------------------------------------------#
 ts = [0]*100
@@ -45,7 +46,7 @@ plt.legend(['original', 'ABBA'], fontsize=18)
 plt.title('Flat with spikes', fontsize=18)
 plt.show()
 
-
+# %%
 # Sine waves
 #-----------------------------------------------------------------------------#
 ts = np.sin(np.arange(0,73,.1))
@@ -63,7 +64,7 @@ plt.legend(['original', 'ABBA'], fontsize=18)
 plt.title('Sine wave', fontsize=18)
 plt.show()
 
-
+# %%
 # Sum of sine waves
 #-----------------------------------------------------------------------------#
 ts = 0.6*np.sin(np.arange(0,73,.1)) + 0.3*np.sin(0.8*np.arange(0,73,.1))
@@ -81,7 +82,7 @@ plt.legend(['original', 'ABBA'], fontsize=18)
 plt.title('Sum of sine wave', fontsize=18)
 plt.show()
 
-
+# %%
 # Stitched linear pieces
 #-----------------------------------------------------------------------------#
 t1 = np.arange(0, 10, 0.5)

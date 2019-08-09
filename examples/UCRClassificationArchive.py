@@ -3,6 +3,7 @@ sys.path.append('./..')
 import numpy as np
 np.random.seed(0)
 import matplotlib.pyplot as plt
+%matplotlib inline
 from ABBA import ABBA
 from tslearn.metrics import dtw as dtw
 import random
@@ -17,7 +18,7 @@ folder_list = ['InlineSkate', 'InspectWingbeatSound', 'LargeKitchenAppliances',
                 'GestureMidAirD1', 'SmoothSubspace', 'PigCVP', 'EOGHorizontalSignal',
                 'Phoneme', 'Plane', 'ACSF1']
 
-
+# %%
 # Select some ts from UCR Suite
 # ---------------------------------------------------------------------------- #
 ts_list = []
@@ -42,7 +43,7 @@ for folder in folder_list:
 
                 ts_list.append(norm_ts)
 
-
+# %%
 # Plot the ts
 # ---------------------------------------------------------------------------- #
 plt.figure()
@@ -51,7 +52,7 @@ for i in ts_list:
 plt.legend(folder_list)
 plt.show()
 
-
+# %%
 # perform test
 # ---------------------------------------------------------------------------- #
 abba = ABBA(verbose=0)
