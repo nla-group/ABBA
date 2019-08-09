@@ -630,7 +630,7 @@ class ABBA(object):
                     err = vals - np.ones((1,ell))*mval
                     nrmerr = np.linalg.norm(err)**2
 
-            print(ell, nrmerr, ell*tol)
+            #print(ell, nrmerr, ell*tol)
             if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster
                 inde += 1
 
@@ -656,6 +656,7 @@ class ABBA(object):
 
         # Order cluster centres so 'a' is the most populated cluster, and so forth.
         new_to_old = [0] * k
+        labels = labels.squeeze().astype(int).tolist()
         counter = collections.Counter(labels)
         for ind, el in enumerate(counter.most_common()):
             new_to_old[ind] = el[0]

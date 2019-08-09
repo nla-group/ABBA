@@ -470,6 +470,61 @@ class test_ABBA(unittest.TestCase):
         correct_centers = np.array(correct_centers)
         #self.assertTrue(np.allclose(centers, correct_centers))
 
+    # TODO
+
+    #--------------------------------------------------------------------------#
+    # util/dtw
+    #--------------------------------------------------------------------------#
+
+    def test_dtw_warping(self):
+        """
+        Compare dynamic time warping distance between two time series that can be
+        warped perfectly
+        """
+        x = [0, 1, 0, 0, 0, 0, 0, 0, 0 ,0]
+        y = [0, 0, 0, 0, 0, 0, 0, 1, 0 ,0]
+        d = dtw(x, y)
+        self.assertTrue(np.allclose(d, 0))
+
+    def test_dtw_path(self):
+        """
+        Check dtw returns the right path for a specific example.
+        """
+        x = [0, 0, 1, 2, 1, 0, 0]
+        y = [0, 1, 3, 1, 0]
+        d, path = dtw(x, y, return_path=True)
+        correct_path = [(0,0), (1,0), (2,1), (3,2), (4,3), (5,4), (6,4)]
+        self.assertTrue(path, correct_path)
+
+    def test_dtw_1norm(self):
+        """
+        Check dtw using an alternative distance measure
+        """
+        dist = lambda a, b: np.abs(a-b)
+        x = [1, 2, 4, 1, 3, 1, 5]
+        y = [2, 1, 3, 4]
+        d, path = dtw(x, y, return_path=True, dist=dist)
+        correct_path = [(0,0), (1,0), (2,0), (3,1), (4,2), (5,2), (6,3)]
+        self.assertTrue(all([np.allclose(d, 6), correct_path==path]))
+
+    def test_dtw_redundant(self):
+        """
+        Test dtw with filter_redundant turned on.
+        """
+        x = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1, 0]
+        y = [0, 7, 0]
+        d = dtw(x, y, filter_redundant=True)
+        self.assertTrue(np.allclose(d, 0))
+
+    @ignore_warnings
+    def test_dtw_RedundantWithPath(self):
+        """
+        Check warning given when attempt unsupported feature
+        """
+        x = [0, 3, 6, 9, 12]
+        y = [0, 12]
+        d = dtw(x, y, filter_redundant=True, return_path=True)
+        self.assertTrue(np.allclose(d, 0))
 
 if __name__ == "__main__":
     unittest.main()

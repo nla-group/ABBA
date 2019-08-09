@@ -1,3 +1,7 @@
+import numpy as np
+from collections import defaultdict
+import warnings
+
 def dtw(x, y, *, dist=lambda a, b: (a-b)*(a-b), return_path=False, filter_redundant=False):
 
     x = np.array(x)
@@ -5,7 +9,7 @@ def dtw(x, y, *, dist=lambda a, b: (a-b)*(a-b), return_path=False, filter_redund
 
     if filter_redundant:
         if return_path:
-            warning.warn('return path not supported when filter_redundant=True')
+            warnings.warn('return path not supported when filter_redundant=True')
             return_path = False
 
         # remove points
