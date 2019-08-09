@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/nla-group/ABBA.svg?branch=master)](https://travis-ci.com/nla-group/ABBA)
+
 # ABBA
 This repository provides ABBA, an algorithm for the adaptive symbolic
 aggregation of time series. The ABBA algorithm consists of two
