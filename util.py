@@ -3,6 +3,37 @@ from collections import defaultdict
 import warnings
 
 def dtw(x, y, *, dist=lambda a, b: (a-b)*(a-b), return_path=False, filter_redundant=False):
+    """
+    Compute dynamic time warping distance between two time series x and y.
+
+    Parameters
+    ----------
+    x - list
+        First time series.
+    y - list
+        Second time series.
+    dist - lambda function
+        Lambda function defining the distance between two points of the time series.
+        By default we use (x-y)^2 to correspond to literature standard for
+        dtw. Note final distance d should be square rooted.
+    return_path - bool
+        Option to return tuple (d, path) where path is a list of tuples outlining
+        the route through time series taken to compute dtw distance.
+    filter_redundant - bool
+        Control filtering to remove `redundant` time series due to sampling
+        resolution. For example, if x = [0, 1, 2, 3, 4] and y = [0, 4]. The dynamic
+        time series distance is non-zero. If filter_redundant=True then we remove
+        the middle 3 time points from x where gradient is constant.
+
+    Returns
+    -------
+    d - numpy float
+        Summation of the dist(x[i], y[i]) along the optimal path to minimise overall
+        distance. Standard dynamic time warping distance given by default dist and
+        d**(0.5).
+    path - list
+        Path taken through time series.
+    """
 
     x = np.array(x)
     y = np.array(y)

@@ -630,7 +630,6 @@ class ABBA(object):
                     err = vals - np.ones((1,ell))*mval
                     nrmerr = np.linalg.norm(err)**2
 
-            #print(ell, nrmerr, ell*tol)
             if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster
                 inde += 1
 

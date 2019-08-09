@@ -462,15 +462,56 @@ class test_ABBA(unittest.TestCase):
                   [4, 8]]
         pieces = np.array(pieces).astype(float)
         abba = ABBA(verbose=0, norm=1)
-        string, centers = abba.digitize_inc(pieces, tol=2/3+1e-10, weighted=True, symmetric=False)
-        print(centers)
-        correct_centers = [[1, -5],
-                           [5/3, 5/3],
+        string, centers = abba.digitize_inc(pieces, tol=1+1e-10, weighted=True, symmetric=False)
+        correct_centers = [[5/4, -89/24],
+                           [3/2, 5/2],
                            [4, 8]]
         correct_centers = np.array(correct_centers)
-        #self.assertTrue(np.allclose(centers, correct_centers))
+        self.assertTrue(np.allclose(centers, correct_centers))
 
-    # TODO
+    @ignore_warnings
+    def test_DigitizeInc_WeightedNotSymmetricTwoNorm(self):
+        """
+        Test digitize_inc with weighted=True and symmetric=False and 2 norm
+        """
+        pieces = [[1, -5],
+                  [2, 0],
+                  [1, -6],
+                  [2, 2],
+                  [1, -4],
+                  [1, 3],
+                  [4, 8]]
+        pieces = np.array(pieces).astype(float)
+        abba = ABBA(verbose=0, norm=2)
+        string, centers = abba.digitize_inc(pieces, tol=140/(196*3)+1e-10, weighted=True, symmetric=False)
+        correct_centers = [[1, -72/14],
+                           [3/2, 12/5],
+                           [2, 0],
+                           [4, 8]]
+        correct_centers = np.array(correct_centers)
+        self.assertTrue(np.allclose(centers, correct_centers))
+
+    # TODO Weighted symmetric 1 norm
+    # TODO Weighted symmetric 2 norm
+    # TODO Not Weighted symmetric 1 norm
+    # TODO Not Weighted symmetric 2 norm
+
+    @ignore_warnings
+    def test_DigitizeInc_SymbolOrdering(self):
+        """
+        Test digitize function orders letters by most occuring symbol.
+        """
+        abba = ABBA(verbose=0, tol=1.0)
+        pieces = [[1,1,0],
+                  [50,50,0],
+                  [100,100,0],
+                  [2,2,0],
+                  [51,51,0],
+                  [3,3,0]]
+        pieces = np.array(pieces).astype(float)
+        string, centers = abba.digitize_inc(pieces)
+        print(string)
+        self.assertTrue('abcaba'==string)
 
     #--------------------------------------------------------------------------#
     # util/dtw
