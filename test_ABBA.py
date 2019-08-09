@@ -2,6 +2,7 @@ import unittest
 from ABBA import ABBA
 import numpy as np
 import warnings
+from util import dtw
 
 def ignore_warnings(test_func):
     def do_test(self, *args, **kwargs):

@@ -654,10 +654,22 @@ class ABBA(object):
                 if inds < len(incs):
                     mval = incs[ind[inds]]
 
-        string = ''.join([ chr(97 + j) for j in labels])
+        # Order cluster centres so 'a' is the most populated cluster, and so forth.
+        new_to_old = [0] * k
+        counter = collections.Counter(labels)
+        for ind, el in enumerate(counter.most_common()):
+            new_to_old[ind] = el[0]
+
+        # invert permutation
+        old_to_new = [0] * k
+        for i, p in enumerate(new_to_old):
+            old_to_new[p] = i
+
+        # Convert labels to string
+        string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
         if self.verbose in [1, 2]:
             print('Digitization_inc: Using', k, 'symbols.')
-        return string, centers
+        return string, centers[new_to_old, :]
 
     def get_patches(self, ts, pieces, string, centers):
         """
