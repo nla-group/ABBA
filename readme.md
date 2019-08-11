@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.com/nla-group/ABBA.svg?branch=master)](https://travis-ci.com/nla-group/ABBA)
+[![codecov](https://codecov.io/gh/nla-group/ABBA/branch/master/graph/badge.svg)](https://codecov.io/gh/nla-group/ABBA)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # ABBA
 This repository provides ABBA, an algorithm for the adaptive symbolic
