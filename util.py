@@ -39,23 +39,35 @@ def dtw(x, y, *, dist=lambda a, b: (a-b)*(a-b), return_path=False, filter_redund
     y = np.array(y)
 
     if filter_redundant:
-        if return_path:
-            warnings.warn('return path not supported when filter_redundant=True')
-            return_path = False
-
         # remove points
         if len(x) > 2:
             xdiff = np.diff(x)
-            x = x[np.hstack((True,(xdiff[1:] - xdiff[0:-1]) >= 1e-14, True))]
+            x_keep = np.abs(xdiff[1:] - xdiff[0:-1]) >= 1e-14
+            x = x[np.hstack((True, x_keep, True))]
+        else:
+            x_keep = []
+
         if len(y) > 2:
             ydiff = np.diff(y)
-            y = y[np.hstack((True,(ydiff[1:] - ydiff[0:-1]) >= 1e-14, True))]
+            y_keep = np.abs(ydiff[1:] - ydiff[0:-1]) >= 1e-14
+            y = y[np.hstack((True, y_keep, True))]
+        else:
+            y_keep = []
 
     len_x, len_y = len(x), len(y)
     window = [(i+1, j+1) for i in range(len_x) for j in range(len_y)]
     D = defaultdict(lambda: (float('inf'),))
 
     if return_path:
+        if filter_redundant:
+            x_ind = np.arange(1, len(x_keep)+1)
+            y_ind = np.arange(1, len(y_keep)+1)
+            x_ind = np.hstack((0, x_ind[x_keep], len(x_keep)+1))
+            y_ind = np.hstack((0, y_ind[y_keep], len(y_keep)+1))
+        else:
+            x_ind = np.arange(len(x))
+            y_ind = np.arange(len(y))
+
         D[0, 0] = (0, 0, 0)
         for i, j in window:
             dt = dist(x[i-1], y[j-1])
@@ -65,7 +77,7 @@ def dtw(x, y, *, dist=lambda a, b: (a-b)*(a-b), return_path=False, filter_redund
         path = []
         i, j = len_x, len_y
         while not (i == j == 0):
-            path.append((i-1, j-1))
+            path.append((x_ind[i-1], y_ind[j-1]))
             i, j = D[i, j][1], D[i, j][2]
         path.reverse()
         return (D[len_x, len_y][0], path)

@@ -557,15 +557,35 @@ class test_ABBA(unittest.TestCase):
         d = dtw(x, y, filter_redundant=True)
         self.assertTrue(np.allclose(d, 0))
 
-    @ignore_warnings
+    def test_dtw_NoRedundant(self):
+        """
+        Test example when redudant should remove no datapoints.
+        """
+        x = [2, 4, 3, 7, 2, -5, 6, 2, 0, -1, 5]
+        y = [2, -1, -5, 3, 2, 0, 3, -2, -4, 0]
+        d1 = dtw(x, y, filter_redundant=True)
+        d2 = dtw(x, y, filter_redundant=False)
+        self.assertEqual(d1, d2)
+
     def test_dtw_RedundantWithPath(self):
         """
         Check warning given when attempt unsupported feature
         """
         x = [0, 3, 6, 9, 12]
         y = [0, 12]
-        d = dtw(x, y, filter_redundant=True, return_path=True)
-        self.assertTrue(np.allclose(d, 0))
+        d, path = dtw(x, y, filter_redundant=True, return_path=True)
+        correct_path = [(0,0), (4,1)]
+        self.assertEqual(correct_path, path)
+
+    def test_dtw_RedundantBothShort(self):
+        """
+        Check dtw on two time series of length 2.
+        """
+        x = [0, 4]
+        y = [2, 5]
+        d, path = dtw(x, y, filter_redundant=True, return_path=True)
+        self.assertEqual(d, 5)
+
 
 if __name__ == "__main__":
     unittest.main()
