@@ -16,7 +16,7 @@ from tslearn.metrics import dtw_path as dtw_path
 # %%
 # We're using L1 norms here, so the initial normalization is to have 0 median
 # and unit mean deviation from zero.
-ts = np.sin(13*np.linspace(0,1.8*np.pi,600))
+ts = np.sin(7*np.linspace(0,4*1.8*np.pi,2400))
 ts = np.array(ts)
 ts -= np.median(ts)
 ts *= len(ts)/norm(ts,1)
@@ -29,7 +29,7 @@ abba = ABBA(tol=TOL, norm=1);
 pieces = abba.compress(ts)
 polyg = abba.inverse_compress(ts[0], pieces)
 polyg = np.array(polyg)
-print('one norm error of polygon:', norm(polyg-ts,1), ' -- should be bounded by: ', TOL*(len(ts)+1-len(pieces)))
+print('one norm error of polygon:', norm(polyg-ts,1), ' -- should be bounded by:', TOL*(len(ts)+1-len(pieces)))
 
 plt.figure()
 plt.plot(ts, 'k-')
