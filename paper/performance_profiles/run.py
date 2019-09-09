@@ -3,6 +3,7 @@ from tslearn.metrics import dtw as dtw
 import numpy as np
 import sys
 sys.path.append('./../..')
+sys.path.append('./..')
 import SAX
 from ABBA import ABBA
 import oneD_SAX
@@ -10,6 +11,7 @@ import pickle
 import warnings
 import csv
 import matplotlib.pyplot as plt
+from mydefaults import mydefaults
 
 
 class Error(Exception):
@@ -41,10 +43,10 @@ if __name__ == "__main__":
     # number of symbols
     k = 9
     # scaling parameter
-    scl = 1
+    scl = 0
 
     # If pickle file does not exist, make it.
-    if not os.path.exists(str(tol)+'_scl'+str(scl)+'.p'):
+    if not os.path.exists('scl'+str(scl)+'.p'):
 
         # Calculate number of time series, to provide progess information.
         ts_count = 0
@@ -81,6 +83,9 @@ if __name__ == "__main__":
             for file in files:
                 if file.endswith('tsv'):
                     print('file:', file)
+
+                    # bool to keep track of plots, one plot per classification.
+                    need_to_plot = True
 
                     with open(os.path.join(root, file)) as tsvfile:
                         tsvfile = csv.reader(tsvfile, delimiter='\t')
@@ -169,6 +174,18 @@ if __name__ == "__main__":
 
                                 compression[index] = ABBA_len/len(norm_ts) # Store compression amount
                                 index += 1
+
+                                if need_to_plot:
+                                    fig, ax = plt.subplots(1, 1)
+                                    fig, ax = mydefaults(fig, ax, r=0.8)
+                                    plt.plot(norm_ts, 'k', label='original')
+                                    plt.plot(ts_SAX, '--', label='SAX')
+                                    plt.plot(ts_oneD_SAX, '-.', label='1D-SAX')
+                                    plt.plot(ts_ABBA, ':', label='ABBA')
+                                    plt.legend()
+                                    plt.savefig('scl'+str(scl)+'/'+file[0:-4]+'.pdf')
+                                    need_to_plot = False
+
                                 print('Progress:', index, '/', ts_count) # print progress
 
                             except(TimeSeriesTooShort):
@@ -228,5 +245,5 @@ if __name__ == "__main__":
         D['oneD_SAX_DTW_diff'] = D_oneD_SAX_DTW_diff
         D['ABBA_DTW_diff'] = D_ABBA_DTW_diff
 
-        with open(str(tol)+'_scl'+str(scl)+'.p', 'wb') as handle:
+        with open('scl'+str(scl)+'.p', 'wb') as handle:
             pickle.dump(D, handle, protocol=pickle.HIGHEST_PROTOCOL)

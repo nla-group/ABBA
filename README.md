@@ -92,7 +92,7 @@ file for details
 (https://cran.r-project.org/web/packages/Ckmeans.1d.dp/index.html)
 * All contributors to the UCR Time Series Classification Archive
 (https://www.cs.ucr.edu/~eamonn/time_series_data_2018/)
-* Dr Timothy D. Butters for help with C++ and SWIG
+* Timothy D. Butters for help with C++ and SWIG
 * Massimiliano Fasi for the performance profiling code
 
 

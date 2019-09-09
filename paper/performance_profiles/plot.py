@@ -1,7 +1,7 @@
 ################################################################################
 # Generate performance plots from data in given pickle file.
 
-filename = '0.05_scl1.p'
+filename = 'scl0.p'
 
 ################################################################################
 
@@ -16,26 +16,26 @@ import sys
 sys.path.append('./../..')
 from ABBA import ABBA
 
-D = pickle.load(open('pickle/'+filename, 'rb'))
+D = pickle.load(open(filename, 'rb'))
 measures = ['2', 'DTW', '2_diff', 'DTW_diff']
 
 # Check if directory exists
-if not os.path.exists('plots/'+filename[0:-2]):
-    os.mkdir('plots/'+filename[0:-2])
+if not os.path.exists(filename[0:-2]):
+    os.mkdir(filename[0:-2])
 
 # Save figures in folder
 for m in measures:
     plt.close()
     P = (np.vstack([D['SAX_'+m], D['oneD_SAX_'+m], D['ABBA_'+m]])).T
     P = P[~np.isnan(P).any(axis=1)] # remove NaN rows
-    pp(P, 10, file_name='plots/'+filename[0:-2]+'/'+m+'.pdf', alg_legend=['SAX', '1d-SAX', 'ABBA'], markevery=5)
+    pp(P, 10, file_name=filename[0:-2] + '/' + m + '.pdf', alg_legend=['SAX', '1d-SAX', 'ABBA'], markevery=5)
 
 # If txt file exists, delete it
-if os.path.exists('plots/'+filename[0:-2]+'/info.txt'):
-  os.remove('plots/'+filename[0:-2]+'/info.txt')
+if os.path.exists(filename[0:-2] + '/info.txt'):
+  os.remove(filename[0:-2] + '/info.txt')
 
 # Create text file with key information and save in same folder
-with open('plots/'+filename[0:-2]+'/info.txt', 'a') as f:
+with open(filename[0:-2] + '/info.txt', 'a') as f:
     compression = np.array(D['compression'])
     ind = ~np.isnan(compression)
     failures = np.sum(np.isnan(compression))
