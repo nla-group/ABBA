@@ -47,7 +47,11 @@ def mydefaults(fig, ax, r=0.71, s=1):
     mpl.rcParams['ytick.direction'] = 'in'
 
     mpl.pyplot.tight_layout(pad=1.3) # padding as fraction of font size
-    ax.tick_params(axis='both', which='both', direction='in')
+    if isinstance(ax, tuple):
+        for axi in ax:
+            axi.tick_params(axis='both', which='both', direction='in')
+    else:
+        ax.tick_params(axis='both', which='both', direction='in')
 
     # Save fig with transparent background
     mpl.rcParams['savefig.transparent'] = True
@@ -59,7 +63,12 @@ def mydefaults(fig, ax, r=0.71, s=1):
 
     # Change colorcycle to MATLABS
     c = mpl.cycler(color=['#0072BD', '#D95319', '#EDB120', '#7E2F8E', '#77AC30', '#4DBEEE', '#A2142F'])
-    ax.set_prop_cycle(c)
+
+    if isinstance(ax, tuple):
+        for axi in ax:
+            axi.set_prop_cycle(c)
+    else:
+        ax.set_prop_cycle(c)
     # mpl.rcParams['axes.prop_cycle'] = c # doesnt work?
 
     return fig, ax
