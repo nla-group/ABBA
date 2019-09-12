@@ -28,14 +28,14 @@ for m in measures:
     plt.close()
     P = (np.vstack([D['SAX_'+m], D['oneD_SAX_'+m], D['ABBA_'+m]])).T
     P = P[~np.isnan(P).any(axis=1)] # remove NaN rows
-    pp(P, 10, file_name=filename[0:-2] + '/' + m + '.pdf', alg_legend=['SAX', '1d-SAX', 'ABBA'], markevery=5)
+    pp(P, 10, file_name=filename[0:-2] + '/performance/' + m + '.pdf', alg_legend=['SAX', '1d-SAX', 'ABBA'], markevery=5)
 
 # If txt file exists, delete it
 if os.path.exists(filename[0:-2] + '/info.txt'):
   os.remove(filename[0:-2] + '/info.txt')
 
 # Create text file with key information and save in same folder
-with open(filename[0:-2] + '/info.txt', 'a') as f:
+with open(filename[0:-2] + '/performance/info.txt', 'a') as f:
     compression = np.array(D['compression'])
     ind = ~np.isnan(compression)
     failures = np.sum(np.isnan(compression))

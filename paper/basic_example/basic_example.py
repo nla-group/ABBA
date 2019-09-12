@@ -6,7 +6,7 @@ np.random.seed(0)
 import sys
 sys.path.append('./../..')
 from ABBA import ABBA
-from paper.mydefaults import mydefaults
+from util import myfigure
 
 # Construct time series
 t1 = np.arange(0, 10, 0.5)              # up
@@ -26,14 +26,13 @@ print('Length of time series:', len(ts))
 
 
 # Plot compression
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax, r=0.5, s=1.5)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.5, fig_scale=1)
 ax.axis([0, 230, -3, 3])
 plt.xlabel('time point')
 plt.ylabel('value')
 ax.plot(ts, color='k', linestyle='-')
 plt.tight_layout()
-plt.savefig('time_series.pdf')
+plt.savefig('time_series.pdf', dpi=300, transparent=True)
 
 abba = ABBA(tol=0.4, scl=0, min_k=3, max_k=10, verbose=1)
 pieces = abba.compress(ts)
@@ -44,8 +43,7 @@ string, centers = abba.digitize(pieces)
 print(string)
 
 # Plot compression
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.8, fig_scale=1.7)
 
 ax.axis([0, 230, -3, 4.5])
 plt.xlabel('time point')
@@ -61,8 +59,8 @@ ax.annotate('6', (np.sum(pieces[0:5,0])+pieces[5,0]/2+5, ts[0]+np.sum(pieces[0:5
 ax.annotate('7', (np.sum(pieces[0:6,0])+pieces[6,0]/2, ts[0]+np.sum(pieces[0:6,1])+pieces[6,1]/2+0.2))
 plt.legend()
 plt.tight_layout()
-plt.savefig('compression.pdf')
-plt.savefig('compression.png')
+plt.savefig('compression.pdf', dpi=300, transparent=True)
+plt.savefig('compression.png', dpi=300, transparent=True)
 #plt.close()
 
 
@@ -72,8 +70,7 @@ c1 = (0.968,0.867,0.631)
 c2 = (0.961,0.737,0.639)
 
 # Plot digitization with scl=0
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.8, fig_scale=1.7)
 ax.axis([0, 80, -8, 6])
 plt.xlabel('length')
 plt.ylabel('increment')
@@ -86,8 +83,8 @@ len = 81
 ax.fill_between(np.arange(0, len), [6]*len, [split2]*len, facecolor=c2, linewidth=0.0)
 ax.fill_between(np.arange(0, len), [split2]*len, [split1]*len, facecolor=c1, linewidth=0.0)
 ax.fill_between(np.arange(0, len), [split1]*len, [-8]*len, facecolor=c3, linewidth=0.0)
-plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 30, label='pieces')
-plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 20, label='cluster centers')
+plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 20, label='pieces')
+plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 15, label='cluster centers')
 plt.text(70, centers[0,1], 'a', ha='center', fontweight='bold', wrap=True)
 plt.text(70, centers[1,1], 'b', ha='center', fontweight='bold', wrap=True)
 plt.text(70, centers[2,1], 'c', ha='center', fontweight='bold', wrap=True)
@@ -95,8 +92,8 @@ for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
 plt.tight_layout()
-plt.savefig('digitization0.pdf')
-plt.savefig('digitization0.png')
+plt.savefig('digitization0.pdf', dpi=300, transparent=True)
+plt.savefig('digitization0.png', dpi=300, transparent=True)
 
 # Plot digitisation with scl=1
 abba = ABBA(tol=0.4, scl=1, min_k=3, max_k=10, verbose=1)
@@ -115,16 +112,15 @@ for index, entry in enumerate(mesh):
     Z.append(np.argmin(np.sum(np.abs(centers-entry)**2,axis=-1)**(1./2)))
 Z = np.array(Z).reshape(xx.shape)
 
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.8, fig_scale=1.7)
 plt.xlabel('length')
 plt.ylabel('increment')
 plt.imshow(Z, interpolation='nearest',
            extent=(xx.min(), xx.max(), yy.min(), yy.max()),
            cmap=cmap, norm=norm,
            aspect='auto', origin='lower')
-plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 30, label='pieces')
-plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 20, label='cluster centers')
+plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 20, label='pieces')
+plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 15, label='cluster centers')
 for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
@@ -132,15 +128,14 @@ plt.text(centers[0,0], centers[0,1]+1.2, 'a', ha='center', fontweight='bold', wr
 plt.text(centers[1,0], centers[1,1]+1.2, 'b', ha='center', fontweight='bold', wrap=True)
 plt.text(centers[2,0], centers[2,1]+1.2, 'c', ha='center', fontweight='bold', wrap=True)
 plt.tight_layout()
-plt.savefig('digitization1.pdf')
+plt.savefig('digitization1.pdf', dpi=300, transparent=True)
 
 
 # Plot digitization with scl=inf
 abba = ABBA(tol=0.4, scl=np.inf, min_k=3, max_k=10, verbose=1)
 string, centers = abba.transform(ts)
 print(string)
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.8, fig_scale=1.7)
 ax.axis([0, 80, -8, 6])
 plt.xlabel('length')
 plt.ylabel('increment')
@@ -149,8 +144,8 @@ split2 = (centers[1,0] + centers[2,0])/2
 ax.axvspan(0, split1, color=c2, zorder=1)
 ax.axvspan(split1, split2, color=c1, zorder=1)
 ax.axvspan(split2, 80, color=c3, zorder=1)
-plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 30, label='pieces', zorder=2)
-plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 20, label='cluster centers', zorder=2)
+plt.scatter(pieces[:,0], pieces[:,1], marker='x', c='black', s = 20, label='pieces', zorder=2)
+plt.scatter(centers[:,0], centers[:,1], marker='o', c='red', s = 15, label='cluster centers', zorder=2)
 plt.text(centers[0,0], -4, 'a', ha='center', fontweight='bold', wrap=True)
 plt.text(centers[1,0], -4, 'b', ha='center', fontweight='bold', wrap=True)
 plt.text(centers[2,0], -4, 'c', ha='center', fontweight='bold', wrap=True)
@@ -158,4 +153,4 @@ for i in range(pieces.shape[0]):
     ax.annotate(str(i+1), (pieces[i,0]-2, pieces[i,1]+0.2))
 plt.legend(loc=1)
 plt.tight_layout()
-plt.savefig('digitizationinf.pdf')
+plt.savefig('digitizationinf.pdf', dpi=300, transparent=True)

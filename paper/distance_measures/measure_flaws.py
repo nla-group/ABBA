@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('./../..')
-from paper.mydefaults import mydefaults
+from util import myfigure
 
 
 # Construct time series
@@ -25,12 +25,7 @@ t21 /= np.std(t21, ddof=1)
 t22 = t22 - np.mean(t22)
 t22 /= np.std(t22, ddof=1)
 
-# workaround bug where plots had different font size
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax, r=0.4)
-
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax, r=0.4)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.5, fig_scale=1.7)
 ax.axis([0, 100, -1, 3.5])
 ax.plot(t21)
 ax.plot(t22)
@@ -40,8 +35,7 @@ ax.spines['right'].set_visible(False)
 plt.tight_layout()
 plt.savefig('shift_in_time.pdf')
 
-fig, ax = plt.subplots(1, 1)
-fig, ax = mydefaults(fig, ax, r=0.4)
+fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.5, fig_scale=1.7)
 ax.axis([0, 100, -1, 3.5])
 ax.plot(t11)
 ax.plot(t12)

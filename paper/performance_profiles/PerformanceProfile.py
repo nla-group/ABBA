@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-sys.path.append('./../')
-from mydefaults import mydefaults
+sys.path.append('./../..')
+from util import myfigure
 
 def PerformanceProfile(A, th_max, file_name, alg_legend, n_intervals=100,
             markevery=1):
@@ -12,8 +12,7 @@ def PerformanceProfile(A, th_max, file_name, alg_legend, n_intervals=100,
     m, n = A.shape
     minA = np.min(A, 1)
 
-    fig, ax = plt.subplots(1, 1)
-    fig, ax = mydefaults(fig, ax, r=0.8)
+    fig, ax = myfigure(nrows=1, ncols=1, fig_ratio=0.71, fig_scale=1.6)
 
     # Use definition at some points theta
     n_intervals = 100;

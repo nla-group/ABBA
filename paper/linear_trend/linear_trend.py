@@ -6,7 +6,7 @@ import SAX
 from ABBA import ABBA
 import matplotlib.pyplot as plt
 np.random.seed(0)
-from mydefaults import mydefaults
+from util import myfigure
 
 # Construct noisy sine wave with linear trend
 linspace = np.linspace(0, 16*2*np.pi, 500)
@@ -15,8 +15,7 @@ ts += 0.2*np.random.randn(500)
 ts += np.linspace(0, 4, 500)
 
 # Plot SAX representation
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(4)
-fig, (ax1, ax2, ax3, ax4) = mydefaults(fig, (ax1, ax2, ax3, ax4), s = 1.5)
+fig, (ax1, ax2, ax3, ax4) = myfigure(nrows=4, ncols=1, fig_ratio=0.71, fig_scale=1)
 plt.subplots_adjust(left=0.125, bottom=None, right=0.95, top=None, wspace=None, hspace=None)
 ts1 = ts
 ts1 -= np.mean(ts1)
