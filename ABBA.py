@@ -392,8 +392,8 @@ class ABBA(object):
             raise ValueError('Number of pieces less than min_k.')
 
         # Initialise variables
-        centers = np.array([])
-        labels = -np.ones((np.shape(pieces)[0], 1))
+        centers = np.zeros((0,2))
+        labels = [-1]*np.shape(pieces)[0]
 
         # Construct deep copy and scale data
         data = deepcopy(pieces[:,0:2])
@@ -404,7 +404,7 @@ class ABBA(object):
         if self.scl == 0:
             # ORDERED
             if self.ordered:
-                if symmetric:
+                if self.symmetric:
                     ind = np.argsort(abs(data[:,1]))
                 else:
                     ind = np.argsort(data[:,1])
@@ -433,40 +433,40 @@ class ABBA(object):
                         ell = inde-inds+2 # number of points in new test cluster
                         old_mval = mval
 
-                        if weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
+                        if self.weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
                             wgts = np.arange(1,ell+1)
                             wvals = np.cumsum(vals)/wgts
                             mval = weighted_median(wvals, wgts)
                             err = np.cumsum(vals) - np.arange(1,ell+1)*mval
                             nrmerr = np.linalg.norm(err,1)
 
-                        if weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
+                        if self.weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
                             wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
                             wvals = vals*wgths
                             mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
                             err = np.cumsum(vals) - np.arange(1,ell+1)*mval
                             nrmerr = np.linalg.norm(err)**2
 
-                        if not weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
+                        if not self.weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
                             mval = np.median(vals)   # standard median
                             err = vals - np.ones((1,ell))*mval
                             nrmerr = np.linalg.norm(err,1)
 
-                        if not weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
+                        if not self.weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
                             mval = np.sum(vals)/ell  # standard mean
                             err = vals - np.ones((1,ell))*mval
                             nrmerr = np.linalg.norm(err)**2
 
-                    if nrmerr < ell*tol and inde+1<np.shape(data)[0]:   # accept enlarged cluster
+                    if nrmerr < ell*self.digitization_tol and inde+1<np.shape(data)[0]:   # accept enlarged cluster
                         inde += 1
 
                     else:
                         mlen = np.mean(data[ind[inds:inde+1], 0])
-                        labels[ind[inds:inde+1],0] = k
+                        for ii in ind[inds:inde+1]:
+                            labels[ii] = k
+                        centers = np.vstack((centers, np.array([mlen, old_mval])))
 
-                        centers = np.append(centers, np.array([[mlen, old_mval]]), axis = 0)
-
-                        if symmetric and not sign_sorted and sign_change:
+                        if self.symmetric and not sign_sorted and sign_change:
                             ind1 = ind[inde+1:]
                             lst = data[ind1, 1]
                             ind2 = np.lexsort((np.abs(lst),np.sign(lst)))
@@ -502,7 +502,7 @@ class ABBA(object):
                 # select data and check if CKmeans compatible
                 data = data[:,1]
                 if self.Ck and (len(set(data)) < self.min_k):
-                    if verbose in [1, 2]:
+                    if self.verbose in [1, 2]:
                         warnings.warn('Note enough unique pieces for Ckmeans. Using sklearn KMeans instead.',  stacklevel=3)
                     self.Ck = False
 
@@ -787,161 +787,6 @@ class ABBA(object):
                     pieces[p+1,0] -= 1
             pieces[-1,0] = round(pieces[-1,0])
         return pieces
-
-    def digitize_inc(self, pieces, *, tol=None, weighted=True, symmetric=True):
-        """
-        Convert compressed representation to symbolic representation using 1D clustering.
-        This method clusters only the increments of the pieces and is greedy.
-        It is tolerance driven.
-
-        Parameters
-        ----------
-        pieces - numpy array
-            Time series in compressed format. See compression.
-
-        Returns
-        -------
-        string - string
-            Time series in symbolic representation using unicode characters starting
-            with character 'a'.
-
-        centers - numpy array
-            centers of clusters from clustering algorithm. Each centre corresponds
-            to a character in string.
-        """
-
-        def weighted_median(data, weights):
-            """
-            Args:
-              data (list or numpy.array): data
-              weights (list or numpy.array): weights
-            Taken from https://gist.github.com/tinybike/d9ff1dad515b66cc0d87
-            """
-            data, weights = np.array(data).squeeze(), np.array(weights).squeeze()
-            s_data, s_weights = map(np.array, zip(*sorted(zip(data, weights))))
-            midpoint = 0.5 * sum(s_weights)
-            if any(weights > midpoint):
-                w_median = (data[weights == np.max(weights)])[0]
-            else:
-                cs_weights = np.cumsum(s_weights)
-                idx = np.where(cs_weights <= midpoint)[0][-1]
-                if cs_weights[idx] == midpoint:
-                    w_median = np.mean(s_data[idx:idx+2])
-                else:
-                    w_median = s_data[idx+1]
-            return w_median
-
-        if len(pieces)==1:
-            return 'a', np.array([[pieces[0,0],pieces[0,1]]])
-
-        if tol is None:
-            if self.norm==2:
-                tol = self.tol**2
-            else:
-                tol = self.tol
-
-        lens = pieces[:,0] # length values
-        incs = pieces[:,1] # increment values
-
-        centers = np.zeros((0,2))
-        labels = -np.ones((len(incs),1))
-
-        if symmetric:
-            ind = np.argsort(abs(incs))
-        else:
-            ind = np.argsort(incs)
-
-        k = 0 # counter for clusters
-        inds = 0    # given accepted cluster
-        inde = 0
-        mval = incs[ind[inds]]
-
-        last_sign = np.sign(mval)  # as soon as there is a cluster having a sign change in increments
-        sign_change = False        # we have covered the point zero. from that on we should work
-        sign_sorted = False        # incrementally in the positive and negative direction
-
-        while inde < len(incs):
-
-            if inde == len(incs)-1:
-                #print('final')
-                old_mval = mval
-                nrmerr = np.inf
-            else:
-                # try to add another point to cluster
-                vals = incs[np.sort(ind[inds:inde+2])]
-
-                if np.sign(incs[ind[inde+1]]) != last_sign: # added point has different sign
-                    sign_change = True
-
-                ell = inde-inds+2 # number of points in new test cluster
-                old_mval = mval
-
-                if weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
-                    wgts = np.arange(1,ell+1)
-                    wvals = np.cumsum(vals)/wgts
-                    mval = weighted_median(wvals, wgts)
-                    err = np.cumsum(vals) - np.arange(1,ell+1)*mval
-                    nrmerr = np.linalg.norm(err,1)
-
-                if weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
-                    wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
-                    wvals = vals*wgths
-                    mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
-                    err = np.cumsum(vals) - np.arange(1,ell+1)*mval
-                    nrmerr = np.linalg.norm(err)**2
-
-                if not weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
-                    mval = np.median(vals)   # standard median
-                    err = vals - np.ones((1,ell))*mval
-                    nrmerr = np.linalg.norm(err,1)
-
-                if not weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
-                    mval = np.sum(vals)/ell  # standard mean
-                    err = vals - np.ones((1,ell))*mval
-                    nrmerr = np.linalg.norm(err)**2
-
-            if nrmerr < ell*tol and inde+1<len(incs):   # accept enlarged cluster
-                inde += 1
-
-            else:
-                mlen = np.mean(lens[ind[inds:inde+1]])
-                labels[ind[inds:inde+1],0] = k
-
-                centers = np.append(centers, np.array([[mlen, old_mval]]), axis = 0)
-
-                if symmetric and not sign_sorted and sign_change:
-                    ind1 = ind[inde+1:]
-                    lst = incs[ind1]
-                    ind2 = np.lexsort((np.abs(lst),np.sign(lst)))
-                    ind[inde+1:] = ind1[ind2]
-                    sign_sorted = True
-
-                k += 1
-                inds = inde+1
-                inde = inds
-
-                if inds < len(incs):
-                    mval = incs[ind[inds]]
-
-        # Order cluster centres so 'a' is the most populated cluster, and so forth.
-        new_to_old = [0] * k
-        labels = labels.squeeze().astype(int).tolist()
-        counter = collections.Counter(labels)
-        for ind, el in enumerate(counter.most_common()):
-            new_to_old[ind] = el[0]
-
-        # invert permutation
-        old_to_new = [0] * k
-        for i, p in enumerate(new_to_old):
-            old_to_new[p] = i
-
-        # Convert labels to string
-        string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
-        if self.verbose in [1, 2]:
-            print('Digitization_inc: Using', k, 'symbols.')
-        return string, centers[new_to_old, :]
-
-
 
     def get_patches(self, ts, pieces, string, centers):
         """
