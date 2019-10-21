@@ -510,7 +510,6 @@ class test_ABBA(unittest.TestCase):
                   [3,3,0]]
         pieces = np.array(pieces).astype(float)
         string, centers = abba.digitize(pieces)
-        print(string)
         self.assertTrue('abcaba'==string)
 
     #--------------------------------------------------------------------------#

@@ -411,7 +411,7 @@ class ABBA(object):
             self.Ck = True
         except: #TODO use https://github.com/llimllib/ckmeans/blob/master/ckmeans.py instead
             self.Ck = False
-            if verbose in [1, 2]:
+            if self.verbose in [1, 2]:
                 warnings.warn('Ckmeans module unavailable, try running makefile. Using sklearn KMeans instead.',  stacklevel=3)
 
         ########################################################################
@@ -453,8 +453,6 @@ class ABBA(object):
 
             # Use Kmeans
             else:
-                data = data[:,1].reshape(-1,1) # reshape for sklearn
-
                 # Run through values of k from min_k to max_k checking bound
                 if self.digitization_tol != 0:
                     error = np.inf
@@ -463,13 +461,13 @@ class ABBA(object):
                         k += 1
                         # tol=0 ensures labels and centres coincide
                         if self.seed:
-                            kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
+                            kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data[:,1].reshape(-1,1))
                         else:
-                            kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                            kmeans = KMeans(n_clusters=k, tol=0).fit(data[:,1].reshape(-1,1))
                         centers = kmeans.cluster_centers_
                         labels = kmeans.labels_
 
-                        error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
+                        error_1, error_2 = self._max_cluster_var(data[:,1].reshape(-1,1), labels, centers, k)
                         error = max([error_1, error_2])
                         if self.verbose == 2:
                             print('k:', k)
@@ -479,16 +477,16 @@ class ABBA(object):
 
                 # Zero error so cluster with largest possible k.
                 else:
-                    if len(data) < self.max_k:
-                        k = len(data)
+                    if len(data[:,1]) < self.max_k:
+                        k = len(data[:,1])
                     else:
                         k = self.max_k
 
                     # tol=0 ensures labels and centres coincide
-                    kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                    kmeans = KMeans(n_clusters=k, tol=0).fit(data[:,1].reshape(-1,1))
                     centers = kmeans.cluster_centers_
                     labels = kmeans.labels_
-                    error = self._max_cluster_var(data, labels, centers, k)
+                    error = self._max_cluster_var(data[:,1].reshape(-1,1), labels, centers, k)
                     if self.verbose in [1, 2]:
                         print('Digitization: Using', k, 'symbols')
 
@@ -536,8 +534,6 @@ class ABBA(object):
 
             # Use Kmeans
             else:
-                data = data.reshape[:,0](-1,1) # reshape for sklearn
-
                 # Run through values of k from min_k to max_k checking bound
                 if self.digitization_tol != 0:
                     error = np.inf
@@ -546,12 +542,12 @@ class ABBA(object):
                         k += 1
                         # tol=0 ensures labels and centres coincide
                         if self.seed:
-                            kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
+                            kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data[:,0].reshape(-1,1))
                         else:
-                            kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                            kmeans = KMeans(n_clusters=k, tol=0).fit(data[:,0].reshape(-1,1))
                         centers = kmeans.cluster_centers_
                         labels = kmeans.labels_
-                        error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
+                        error_1, error_2 = self._max_cluster_var(data[:,0].reshape(-1,1), labels, centers, k)
                         error = max([error_1, error_2])
                         if self.verbose == 2:
                             print('k:', k)
@@ -561,16 +557,16 @@ class ABBA(object):
 
                 # Zero error so cluster with largest possible k.
                 else:
-                    if len(data) < self.max_k:
-                        k = len(data)
+                    if len(data[:,0]) < self.max_k:
+                        k = len(data[:,0])
                     else:
                         k = self.max_k
 
                     # tol=0 ensures labels and centres coincide
-                    kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                    kmeans = KMeans(n_clusters=k, tol=0).fit(data[:,0].reshape(-1,1))
                     centers = kmeans.cluster_centers_
                     labels = kmeans.labels_
-                    error = self._max_cluster_var(data, labels, centers, k)
+                    error = self._max_cluster_var(data[:,0].reshape(-1,1), labels, centers, k)
                     if self.verbose in [1, 2]:
                         print('Digitization: Using', k, 'symbols')
 
