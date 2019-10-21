@@ -38,14 +38,16 @@ class ABBA(object):
     norm - 1 or 2
         Which norm to use for the compression phase. Also used by digitize_inc,
         a greedy clustering approach.
-    ordered - True/False
-        When using 1D clustering, the error of each cluster can take into
-        consideration the order in which each element occur. Method uses only
-        the increments of the pieces and is greedy. It is tolerance driven.
+    c_method - 'kmeans' or 'incremental'
+        Type of clustering algorithm used
+        'kmeans' - Kmeans clustering used, and ckmeans used if scl = 0 or scl = inf
+        'incremental' - Cluster increments in a greedy fashion, taking into
+            consideration the order of the segments.
     weighted - True/False
-        Weight elements in clustering due to cumulative error.
+        When using c_method = 'incremental, weight elements in clustering due
+        to cumulative error.
     Symmetric - True/False
-        Cluster from both ends to ensure symmetry.
+        When using c_method = 'incremental, cluster from both ends to ensure symmetry.
 
 
     Raises
@@ -70,7 +72,7 @@ class ABBA(object):
     Institute for Mathematical Sciences, The University of Manchester, UK, 2019.
     """
 
-    def __init__(self, *, tol=0.1, scl=0, min_k=2, max_k=100, max_len = np.inf, verbose=1, seed=True, norm=2, ordered=False, weighted=False, symmetric=True):
+    def __init__(self, *, tol=0.1, scl=0, min_k=2, max_k=100, max_len = np.inf, verbose=1, seed=True, norm=2, c_method='kmeans', weighted=False, symmetric=True):
         self.tol = tol
         self.scl = scl
         self.min_k = min_k
@@ -79,23 +81,12 @@ class ABBA(object):
         self.verbose = verbose
         self.seed = seed
         self.norm = norm
-        self.ordered = ordered
+        self.c_method = c_method
         self.weighted = weighted
         self.symmetric = symmetric
 
         self._check_parameters()
 
-        # Import Cpp wrapper
-        Ck = False
-        if self.scl == np.inf or (self.scl == 0 and not self.ordered):
-            try:
-                from src.Ckmeans import kmeans_1d_dp
-                from src.Ckmeans import double_vector
-                Ck = True
-            except:
-                if verbose in [1, 2]:
-                    warnings.warn('Ckmeans module unavailable, try running makefile. Using sklearn KMeans instead.',  stacklevel=3)
-        self.Ck = Ck
 
     def transform(self, time_series):
         """
@@ -167,8 +158,8 @@ class ABBA(object):
             raise NotImplementedError('norm = 1 or norm = 2')
 
         # Check ordered
-        if type(self.ordered) is not bool:
-            raise ValueError('Invalid ordered.')
+        if self.c_method not in ['kmeans', 'incremental']:
+            raise ValueError('Invalid c_method.')
 
         # Check weighted
         if type(self.weighted) is not bool:
@@ -366,246 +357,94 @@ class ABBA(object):
             to character in string.
         """
 
-        def weighted_median(data, weights):
-            """
-            Args:
-              data (list or numpy.array): data
-              weights (list or numpy.array): weights
-            Taken from https://gist.github.com/tinybike/d9ff1dad515b66cc0d87
-            """
-            data, weights = np.array(data).squeeze(), np.array(weights).squeeze()
-            s_data, s_weights = map(np.array, zip(*sorted(zip(data, weights))))
-            midpoint = 0.5 * sum(s_weights)
-            if any(weights > midpoint):
-                w_median = (data[weights == np.max(weights)])[0]
-            else:
-                cs_weights = np.cumsum(s_weights)
-                idx = np.where(cs_weights <= midpoint)[0][-1]
-                if cs_weights[idx] == midpoint:
-                    w_median = np.mean(s_data[idx:idx+2])
-                else:
-                    w_median = s_data[idx+1]
-            return w_median
-
         # Check number of pieces
         if len(pieces) < self.min_k:
             raise ValueError('Number of pieces less than min_k.')
 
-        # Initialise variables
-        centers = np.zeros((0,2))
-        labels = [-1]*np.shape(pieces)[0]
 
         # Construct deep copy and scale data
         data = deepcopy(pieces[:,0:2])
 
         ########################################################################
+        #     'incremental'
+        ########################################################################
+        if self.c_method == 'incremental':
+            labels, centers = self.digitize_incremental(data)
+
+        ########################################################################
+        #     'kmeans'
+        ########################################################################
+        elif self.c_method == 'kmeans':
+            if self.scl == np.inf or self.scl == 0:
+                labels, centers = self.digitize_ckmeans(data)
+            else:
+                labels, centers = self.digitize_kmeans(data)
+
+        ########################################################################
+        #     Convert labels
+        ########################################################################
+        # Order cluster centres so 'a' is the most populated cluster, and so forth.
+        k = len(set(labels))
+        new_to_old = [0] * k
+        counter = collections.Counter(labels)
+        for ind, el in enumerate(counter.most_common()):
+            new_to_old[ind] = el[0]
+
+        # invert permutation
+        old_to_new = [0] * k
+        for i, p in enumerate(new_to_old):
+            old_to_new[p] = i
+
+        # Convert labels to string
+        string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
+        return string, centers[new_to_old, :]
+
+
+    def digitize_ckmeans(self, data):
+        # Initialise variables
+        centers = np.zeros((0,2))
+        labels = [-1]*np.shape(data)[0]
+        # Try Cpp wrapper
+        try:
+            from src.Ckmeans import kmeans_1d_dp
+            from src.Ckmeans import double_vector
+            self.Ck = True
+        except: #TODO use https://github.com/llimllib/ckmeans/blob/master/ckmeans.py instead
+            self.Ck = False
+            if verbose in [1, 2]:
+                warnings.warn('Ckmeans module unavailable, try running makefile. Using sklearn KMeans instead.',  stacklevel=3)
+
+        ########################################################################
         #     scl == 0
         ########################################################################
         if self.scl == 0:
-            # ORDERED
-            if self.ordered:
-                if self.symmetric:
-                    ind = np.argsort(abs(data[:,1]))
-                else:
-                    ind = np.argsort(data[:,1])
-
-                k = 0 # counter for clusters
-                inds = 0    # given accepted cluster
-                inde = 0
-                mval = data[ind[inds], 1]
-
-                last_sign = np.sign(mval)  # as soon as there is a cluster having a sign change in increments
-                sign_change = False        # we have covered the point zero. from that on we should work
-                sign_sorted = False        # incrementally in the positive and negative direction
-
-                while inde < np.shape(data)[0]:
-                    if inde == np.shape(data)[0]-1:
-                        #print('final')
-                        old_mval = mval
-                        nrmerr = np.inf
-                    else:
-                        # try to add another point to cluster
-                        vals = data[np.sort(ind[inds:inde+2]), 1]
-
-                        if np.sign(data[ind[inde+1], 1]) != last_sign: # added point has different sign
-                            sign_change = True
-
-                        ell = inde-inds+2 # number of points in new test cluster
-                        old_mval = mval
-
-                        if self.weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
-                            wgts = np.arange(1,ell+1)
-                            wvals = np.cumsum(vals)/wgts
-                            mval = weighted_median(wvals, wgts)
-                            err = np.cumsum(vals) - np.arange(1,ell+1)*mval
-                            nrmerr = np.linalg.norm(err,1)
-
-                        if self.weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
-                            wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
-                            wvals = vals*wgths
-                            mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
-                            err = np.cumsum(vals) - np.arange(1,ell+1)*mval
-                            nrmerr = np.linalg.norm(err)**2
-
-                        if not self.weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
-                            mval = np.median(vals)   # standard median
-                            err = vals - np.ones((1,ell))*mval
-                            nrmerr = np.linalg.norm(err,1)
-
-                        if not self.weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
-                            mval = np.sum(vals)/ell  # standard mean
-                            err = vals - np.ones((1,ell))*mval
-                            nrmerr = np.linalg.norm(err)**2
-
-                    if nrmerr < ell*self.digitization_tol and inde+1<np.shape(data)[0]:   # accept enlarged cluster
-                        inde += 1
-
-                    else:
-                        mlen = np.mean(data[ind[inds:inde+1], 0])
-                        for ii in ind[inds:inde+1]:
-                            labels[ii] = k
-                        centers = np.vstack((centers, np.array([mlen, old_mval])))
-
-                        if self.symmetric and not sign_sorted and sign_change:
-                            ind1 = ind[inde+1:]
-                            lst = data[ind1, 1]
-                            ind2 = np.lexsort((np.abs(lst),np.sign(lst)))
-                            ind[inde+1:] = ind1[ind2]
-                            sign_sorted = True
-
-                        k += 1
-                        inds = inde+1
-                        inde = inds
-
-                        if inds < np.shape(data)[0]:
-                            mval = data[ind[inds], 1]
-
-            # NOT ORDERED
-            else:
-                # Import c++ functions
-                if self.Ck:
-                    from src.Ckmeans import kmeans_1d_dp
-                    from src.Ckmeans import double_vector
-
-                # construct tol_s
-                s = .20
-                N = 1
-                for i in pieces:
-                    N += i[0]
-                bound = ((6*(N-len(pieces)))/(N*len(pieces)))*((self.digitization_tol*self.digitization_tol)/(s*s))
-
-                # scale inc to unit variance
-                inc_std = np.std(pieces[:,1])
-                inc_std = inc_std if inc_std > np.finfo(float).eps else 1
-                data[:,1] /= inc_std
-
-                # select data and check if CKmeans compatible
-                data = data[:,1]
-                if self.Ck and (len(set(data)) < self.min_k):
-                    if self.verbose in [1, 2]:
-                        warnings.warn('Note enough unique pieces for Ckmeans. Using sklearn KMeans instead.',  stacklevel=3)
-                    self.Ck = False
-
-                # Use C++ CKmeans
-                if self.Ck:
-                    d = double_vector(data)
-                    output = kmeans_1d_dp(d, self.min_k, self.max_k, bound, 'linear')
-                    labels = np.array(output.cluster)
-
-                    c = np.array(output.centres)
-                    c *= inc_std
-                    centers = self._build_centers(pieces, labels, c, output.Kopt, 0)
-
-                    if self.verbose in [1, 2]:
-                        print('Digitization: Using', output.Kopt, 'symbols')
-
-                    k = output.Kopt
-
-                # Use Kmeans
-                else:
-                    data = data.reshape(-1,1) # reshape for sklearn
-
-                    # Run through values of k from min_k to max_k checking bound
-                    if self.digitization_tol != 0:
-                        error = np.inf
-                        k = self.min_k - 1
-                        while k <= self.max_k-1 and (error > bound):
-                            k += 1
-                            # tol=0 ensures labels and centres coincide
-                            if self.seed:
-                                kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
-                            else:
-                                kmeans = KMeans(n_clusters=k, tol=0).fit(data)
-                            centers = kmeans.cluster_centers_
-                            labels = kmeans.labels_
-                            error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
-                            error = max([error_1, error_2])
-                            if self.verbose == 2:
-                                print('k:', k)
-                                print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
-                        if self.verbose in [1, 2]:
-                            print('Digitization: Using', k, 'symbols')
-
-                    # Zero error so cluster with largest possible k.
-                    else:
-                        if len(data) < self.max_k:
-                            k = len(data)
-                        else:
-                            k = self.max_k
-
-                        # tol=0 ensures labels and centres coincide
-                        kmeans = KMeans(n_clusters=k, tol=0).fit(data)
-                        centers = kmeans.cluster_centers_
-                        labels = kmeans.labels_
-                        error = self._max_cluster_var(data, labels, centers, k)
-                        if self.verbose in [1, 2]:
-                            print('Digitization: Using', k, 'symbols')
-
-                    # build cluster centers
-                    c = centers.reshape(1,-1)[0]
-                    c *= inc_std
-                    centers = self._build_centers(pieces, labels, c, k, 0)
-
-        ########################################################################
-        #     scl == inf
-        ########################################################################
-        elif self.scl == np.inf:
-            # Import c++ functions
-            if self.Ck:
-                from src.Ckmeans import kmeans_1d_dp
-                from src.Ckmeans import double_vector
-
             # construct tol_s
             s = .20
             N = 1
-            for i in pieces:
+            for i in data:
                 N += i[0]
-            bound = ((6*(N-len(pieces)))/(N*len(pieces)))*((self.digitization_tol*self.digitization_tol)/(s*s))
+            bound = ((6*(N-len(data)))/(N*len(data)))*((self.digitization_tol*self.digitization_tol)/(s*s))
 
-            data = deepcopy(pieces[:,0:2])
+            # scale inc to unit variance
+            inc_std = np.std(data[:,1])
+            inc_std = inc_std if inc_std > np.finfo(float).eps else 1
+            data[:,1] /= inc_std
 
-            # scale length to unit variance
-            len_std = np.std(pieces[:,0])
-            len_std = len_std if len_std > np.finfo(float).eps else 1
-            data[:,0] /= len_std
-
-
-            # Select first column and check unique for Ckmeans
-            data = data[:,0]
-            if self.Ck and (len(set(data)) < self.min_k):
+            # Check if CKmeans compatible
+            if self.Ck and (len(set(data[:,1])) < self.min_k):
                 if self.verbose in [1, 2]:
                     warnings.warn('Note enough unique pieces for Ckmeans. Using sklearn KMeans instead.',  stacklevel=3)
                 self.Ck = False
 
-            # Use Ckmeans
+            # Use C++ CKmeans
             if self.Ck:
-                d = double_vector(data)
+                d = double_vector(data[:,1])
                 output = kmeans_1d_dp(d, self.min_k, self.max_k, bound, 'linear')
                 labels = np.array(output.cluster)
 
                 c = np.array(output.centres)
-                c *= len_std
-                centers = self._build_centers(pieces, labels, c, output.Kopt, 1)
+                c *= inc_std
+                centers = self._build_centers(data, labels, c, output.Kopt, 0)
 
                 if self.verbose in [1, 2]:
                     print('Digitization: Using', output.Kopt, 'symbols')
@@ -614,7 +453,90 @@ class ABBA(object):
 
             # Use Kmeans
             else:
-                data = data.reshape(-1,1) # reshape for sklearn
+                data = data[:,1].reshape(-1,1) # reshape for sklearn
+
+                # Run through values of k from min_k to max_k checking bound
+                if self.digitization_tol != 0:
+                    error = np.inf
+                    k = self.min_k - 1
+                    while k <= self.max_k-1 and (error > bound):
+                        k += 1
+                        # tol=0 ensures labels and centres coincide
+                        if self.seed:
+                            kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
+                        else:
+                            kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                        centers = kmeans.cluster_centers_
+                        labels = kmeans.labels_
+
+                        error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
+                        error = max([error_1, error_2])
+                        if self.verbose == 2:
+                            print('k:', k)
+                            print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
+                    if self.verbose in [1, 2]:
+                        print('Digitization: Using', k, 'symbols')
+
+                # Zero error so cluster with largest possible k.
+                else:
+                    if len(data) < self.max_k:
+                        k = len(data)
+                    else:
+                        k = self.max_k
+
+                    # tol=0 ensures labels and centres coincide
+                    kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                    centers = kmeans.cluster_centers_
+                    labels = kmeans.labels_
+                    error = self._max_cluster_var(data, labels, centers, k)
+                    if self.verbose in [1, 2]:
+                        print('Digitization: Using', k, 'symbols')
+
+                # build cluster centers
+                c = centers.reshape(1,-1)[0]
+                c *= inc_std
+                centers = self._build_centers(data, labels, c, k, 0)
+
+        ########################################################################
+        #     scl == inf
+        ########################################################################
+        elif self.scl == np.inf:
+            # construct tol_s
+            s = .20
+            N = 1
+            for i in data:
+                N += i[0]
+            bound = ((6*(N-len(data)))/(N*len(data)))*((self.digitization_tol*self.digitization_tol)/(s*s))
+
+            # scale length to unit variance
+            len_std = np.std(data[:,0])
+            len_std = len_std if len_std > np.finfo(float).eps else 1
+            data[:,0] /= len_std
+
+            # Select first column and check unique for Ckmeans
+            if self.Ck and (len(set(data[:,0])) < self.min_k):
+                if self.verbose in [1, 2]:
+                    warnings.warn('Note enough unique pieces for Ckmeans. Using sklearn KMeans instead.',  stacklevel=3)
+                self.Ck = False
+
+            # Use Ckmeans
+            if self.Ck:
+                d = double_vector(data[:,0])
+                output = kmeans_1d_dp(d, self.min_k, self.max_k, bound, 'linear')
+                labels = np.array(output.cluster)
+
+                c = np.array(output.centres)
+                c *= len_std
+                centers = self._build_centers(data, labels, c, output.Kopt, 1)
+
+                if self.verbose in [1, 2]:
+                    print('Digitization: Using', output.Kopt, 'symbols')
+
+                k = output.Kopt
+
+            # Use Kmeans
+            else:
+                data = data.reshape[:,0](-1,1) # reshape for sklearn
 
                 # Run through values of k from min_k to max_k checking bound
                 if self.digitization_tol != 0:
@@ -655,92 +577,187 @@ class ABBA(object):
                 # build cluster centers
                 c = centers.reshape(1,-1)[0]
                 c *= len_std
-                centers = self._build_centers(pieces, labels, c, k, 1)
+                centers = self._build_centers(data, labels, c, k, 1)
+        return labels, centers
 
+    def digitize_kmeans(self, data):
+        # Initialise variables
+        centers = np.zeros((0,2))
+        labels = [-1]*np.shape(data)[0]
         ########################################################################
         #     scl in (0, inf)
         ########################################################################
-        else:
-            # construct tol_s
-            s = .20
-            N = 1
-            for i in pieces:
-                N += i[0]
-            bound = ((6*(N-len(pieces)))/(N*len(pieces)))*((self.digitization_tol*self.digitization_tol)/(s*s))
+        # construct tol_s
+        s = .20
+        N = 1
+        for i in data:
+            N += i[0]
+        bound = ((6*(N-len(data)))/(N*len(data)))*((self.digitization_tol*self.digitization_tol)/(s*s))
 
-            data = deepcopy(pieces[:,0:2])
+        # scale length to unit variance
+        len_std = np.std(data[:,0])
+        len_std = len_std if len_std > np.finfo(float).eps else 1
+        data[:,0] /= len_std
 
-            # scale length to unit variance
-            len_std = np.std(pieces[:,0])
-            len_std = len_std if len_std > np.finfo(float).eps else 1
-            data[:,0] /= len_std
+        # scale inc to unit variance
+        inc_std = np.std(data[:,1])
+        inc_std = inc_std if inc_std > np.finfo(float).eps else 1
+        data[:,1] /= inc_std
 
-            # scale inc to unit variance
-            inc_std = np.std(pieces[:,1])
-            inc_std = inc_std if inc_std > np.finfo(float).eps else 1
-            data[:,1] /= inc_std
-
-            # Kmeans
-            data[:,0] *= self.scl # scale lengths accordingly
-            # Run through values of k from min_k to max_k checking bound
-            if self.digitization_tol != 0:
-                error = np.inf
-                k = self.min_k - 1
-                while k <= self.max_k-1 and (error > bound):
-                    k += 1
-                    # tol=0 ensures labels and centres coincide
-                    if self.seed:
-                        kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
-                    else:
-                        kmeans = KMeans(n_clusters=k, tol=0).fit(data)
-                    centers = kmeans.cluster_centers_
-                    labels = kmeans.labels_
-                    error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
-                    error = max([error_1, error_2])
-                    if self.verbose == 2:
-                        print('k:', k)
-                        print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
-                if self.verbose in [1, 2]:
-                    print('Digitization: Using', k, 'symbols')
-
-            # Zero error so cluster with largest possible k.
-            else:
-                if len(data) < self.max_k:
-                    k = len(data)
-                else:
-                    k = self.max_k
-
+        # Kmeans
+        data[:,0] *= self.scl # scale lengths accordingly
+        # Run through values of k from min_k to max_k checking bound
+        if self.digitization_tol != 0:
+            error = np.inf
+            k = self.min_k - 1
+            while k <= self.max_k-1 and (error > bound):
+                k += 1
                 # tol=0 ensures labels and centres coincide
-                kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+                if self.seed:
+                    kmeans = KMeans(n_clusters=k, tol=0, random_state=0).fit(data)
+                else:
+                    kmeans = KMeans(n_clusters=k, tol=0).fit(data)
                 centers = kmeans.cluster_centers_
                 labels = kmeans.labels_
-                error = self._max_cluster_var(data, labels, centers, k)
-                if self.verbose in [1, 2]:
-                    print('Digitization: Using', k, 'symbols')
+                error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
+                error = max([error_1, error_2])
+                if self.verbose == 2:
+                    print('k:', k)
+                    print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
+            if self.verbose in [1, 2]:
+                print('Digitization: Using', k, 'symbols')
 
-            # build cluster centers
-            c = centers.reshape(1,-1)[0]
-            centers[:,0] *= len_std
-            centers[:,0] /= self.scl # reverse scaling
-            centers[:,1] *= inc_std
+        # Zero error so cluster with largest possible k.
+        else:
+            if len(data) < self.max_k:
+                k = len(data)
+            else:
+                k = self.max_k
 
-        ########################################################################
-        #     Convert labels
-        ########################################################################
-        # Order cluster centres so 'a' is the most populated cluster, and so forth.
-        new_to_old = [0] * k
-        counter = collections.Counter(labels)
-        for ind, el in enumerate(counter.most_common()):
-            new_to_old[ind] = el[0]
+            # tol=0 ensures labels and centres coincide
+            kmeans = KMeans(n_clusters=k, tol=0).fit(data)
+            centers = kmeans.cluster_centers_
+            labels = kmeans.labels_
+            error = self._max_cluster_var(data, labels, centers, k)
+            if self.verbose in [1, 2]:
+                print('Digitization: Using', k, 'symbols')
 
-        # invert permutation
-        old_to_new = [0] * k
-        for i, p in enumerate(new_to_old):
-            old_to_new[p] = i
+        # build cluster centers
+        c = centers.reshape(1,-1)[0]
+        centers[:,0] *= len_std
+        centers[:,0] /= self.scl # reverse scaling
+        centers[:,1] *= inc_std
+        return labels, centers
 
-        # Convert labels to string
-        string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
-        return string, centers[new_to_old, :]
+
+
+    def digitize_incremental(self, data):
+        """
+        Convert compressed representation to symbolic representation using 1D clustering.
+        This method clusters only the increments of the pieces and is greedy.
+        It is tolerance driven.
+        """
+
+        def weighted_median(data, weights):
+            """
+            Args:
+              data (list or numpy.array): data
+              weights (list or numpy.array): weights
+            Taken from https://gist.github.com/tinybike/d9ff1dad515b66cc0d87
+            """
+            data, weights = np.array(data).squeeze(), np.array(weights).squeeze()
+            s_data, s_weights = map(np.array, zip(*sorted(zip(data, weights))))
+            midpoint = 0.5 * sum(s_weights)
+            if any(weights > midpoint):
+                w_median = (data[weights == np.max(weights)])[0]
+            else:
+                cs_weights = np.cumsum(s_weights)
+                idx = np.where(cs_weights <= midpoint)[0][-1]
+                if cs_weights[idx] == midpoint:
+                    w_median = np.mean(s_data[idx:idx+2])
+                else:
+                    w_median = s_data[idx+1]
+            return w_median
+
+        # Initialise variables
+        centers = np.zeros((0,2))
+        labels = [-1]*np.shape(data)[0]
+
+        if self.symmetric:
+            ind = np.argsort(abs(data[:,1]))
+        else:
+            ind = np.argsort(data[:,1])
+
+        k = 0 # counter for clusters
+        inds = 0    # given accepted cluster
+        inde = 0
+        mval = data[ind[inds], 1]
+
+        last_sign = np.sign(mval)  # as soon as there is a cluster having a sign change in increments
+        sign_change = False        # we have covered the point zero. from that on we should work
+        sign_sorted = False        # incrementally in the positive and negative direction
+
+        while inde < np.shape(data)[0]:
+            if inde == np.shape(data)[0]-1:
+                #print('final')
+                old_mval = mval
+                nrmerr = np.inf
+            else:
+                # try to add another point to cluster
+                vals = data[np.sort(ind[inds:inde+2]), 1]
+
+                if np.sign(data[ind[inde+1], 1]) != last_sign: # added point has different sign
+                    sign_change = True
+
+                ell = inde-inds+2 # number of points in new test cluster
+                old_mval = mval
+
+                if self.weighted and self.norm==1: # minimize accumulated increment errors in 1-norm
+                    wgts = np.arange(1,ell+1)
+                    wvals = np.cumsum(vals)/wgts
+                    mval = weighted_median(wvals, wgts)
+                    err = np.cumsum(vals) - np.arange(1,ell+1)*mval
+                    nrmerr = np.linalg.norm(err,1)
+
+                if self.weighted and self.norm==2: # minimize accumulated increment errors in 2-norm
+                    wgths = (ell+1)*ell/2 - np.cumsum(np.arange(0,ell))
+                    wvals = vals*wgths
+                    mval = np.sum(wvals)/((ell)*(ell+1)*(2*ell+1)/6)
+                    err = np.cumsum(vals) - np.arange(1,ell+1)*mval
+                    nrmerr = np.linalg.norm(err)**2
+
+                if not self.weighted and self.norm==1: # minimize nonaccumulated increment errors in 1-norm
+                    mval = np.median(vals)   # standard median
+                    err = vals - np.ones((1,ell))*mval
+                    nrmerr = np.linalg.norm(err,1)
+
+                if not self.weighted and self.norm==2: # minimize nonaccumulated increment errors in 2-norm
+                    mval = np.sum(vals)/ell  # standard mean
+                    err = vals - np.ones((1,ell))*mval
+                    nrmerr = np.linalg.norm(err)**2
+
+            if nrmerr < ell*self.digitization_tol and inde+1<np.shape(data)[0]:   # accept enlarged cluster
+                inde += 1
+            else:
+                mlen = np.mean(data[ind[inds:inde+1], 0])
+                for ii in ind[inds:inde+1]:
+                    labels[ii] = k
+                centers = np.vstack((centers, np.array([mlen, old_mval])))
+
+                if self.symmetric and not sign_sorted and sign_change:
+                    ind1 = ind[inde+1:]
+                    lst = data[ind1, 1]
+                    ind2 = np.lexsort((np.abs(lst),np.sign(lst)))
+                    ind[inde+1:] = ind1[ind2]
+                    sign_sorted = True
+
+                k += 1
+                inds = inde+1
+                inde = inds
+
+                if inds < np.shape(data)[0]:
+                    mval = data[ind[inds], 1]
+        return labels, centers
 
 
     def inverse_digitize(self, string, centers):

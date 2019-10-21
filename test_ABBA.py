@@ -245,7 +245,7 @@ class test_ABBA(unittest.TestCase):
         pieces = np.array(pieces).astype(float)
         string, centers = abba.digitize(pieces)
         correct_centers = np.array([[1, 1], [1, 1], [1, 1]])
-        self.assertTrue(all([string=='ccccc', np.allclose(centers, correct_centers)]))
+        self.assertTrue(all([string=='aaaaa', np.allclose(centers, correct_centers)]))
 
     #--------------------------------------------------------------------------#
     # inverse_digitize
@@ -419,7 +419,7 @@ class test_ABBA(unittest.TestCase):
                   [1, 3],
                   [4, 8]]
         pieces = np.array(pieces).astype(float)
-        abba = ABBA(verbose=0, norm=1, ordered=True, tol=2/3+1e-10, weighted=False, symmetric=False)
+        abba = ABBA(verbose=0, norm=1, c_method='incremental', tol=2/3+1e-10, weighted=False, symmetric=False)
         string, centers = abba.digitize(pieces)
         correct_centers = [[1, -5],
                            [5/3, 2],
@@ -440,7 +440,7 @@ class test_ABBA(unittest.TestCase):
                   [1, 3],
                   [4, 8]]
         pieces = np.array(pieces).astype(float)
-        abba = ABBA(verbose=0, norm=2, ordered=True, tol=42/27+1e-10, weighted=False, symmetric=False)
+        abba = ABBA(verbose=0, norm=2, c_method='incremental', tol=42/27+1e-10, weighted=False, symmetric=False)
         string, centers = abba.digitize(pieces)
         correct_centers = [[1, -5],
                            [5/3, 5/3],
@@ -461,7 +461,7 @@ class test_ABBA(unittest.TestCase):
                   [1, 3],
                   [4, 8]]
         pieces = np.array(pieces).astype(float)
-        abba = ABBA(verbose=0, norm=1, ordered=True, tol=1+1e-10, weighted=True, symmetric=False)
+        abba = ABBA(verbose=0, norm=1, c_method='incremental', tol=1+1e-10, weighted=True, symmetric=False)
         string, centers = abba.digitize(pieces)
         correct_centers = [[5/4, -89/24],
                            [3/2, 5/2],
@@ -482,7 +482,7 @@ class test_ABBA(unittest.TestCase):
                   [1, 3],
                   [4, 8]]
         pieces = np.array(pieces).astype(float)
-        abba = ABBA(verbose=0, norm=2, ordered=True, tol=(140/(196*3)+1e-10), weighted=True, symmetric=False)
+        abba = ABBA(verbose=0, norm=2, c_method='incremental', tol=(140/(196*3)+1e-10), weighted=True, symmetric=False)
         string, centers = abba.digitize(pieces)
         correct_centers = [[1, -72/14],
                            [3/2, 12/5],
@@ -501,7 +501,7 @@ class test_ABBA(unittest.TestCase):
         """
         Test digitize function orders letters by most occuring symbol.
         """
-        abba = ABBA(verbose=0, tol=1.0, ordered=True)
+        abba = ABBA(verbose=0, tol=1.0, c_method='incremental')
         pieces = [[1,1,0],
                   [50,50,0],
                   [100,100,0],
