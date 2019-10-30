@@ -218,6 +218,7 @@ class ABBA(object):
         x = np.arange(0, len(time_series))
         epsilon =  np.finfo(float).eps
 
+        (lastinc, lasterr) = (0, 0)
         while end < len(time_series):
             # error function for linear piece
             inc = time_series[end] - time_series[start]

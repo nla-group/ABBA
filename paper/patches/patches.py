@@ -14,7 +14,6 @@ pieces = abba.compress(ts)
 APLA = abba.inverse_compress(ts[0], pieces)
 
 string, centers = abba.digitize(pieces)
-print(string)
 
 reconstructed_ts = abba.inverse_transform(string, centers, ts[0])
 
@@ -37,7 +36,8 @@ ax1.plot(ts, color='k', label='original time series')
 ax1.plot(APLA, '--', label='reconstruction after compression')
 ax1.plot(reconstructed_ts, ':', label='reconstruction after digitization')
 ax1.legend()
-ax2.title.set_text(string)
+
+print('Symbolic representation:', string)
 
 ax2.plot(ts[0:250], color='k',  label='original time series')
 next(ax2._get_lines.prop_cycler)
