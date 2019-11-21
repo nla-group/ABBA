@@ -155,6 +155,7 @@ def myfigure(nrows=1, ncols=1, fig_ratio=0.71, fig_scale=1):
     c = mpl.cycler(color=['#0072BD', '#D95319', '#EDB120', '#7E2F8E', '#77AC30', '#4DBEEE', '#A2142F'])
 
     if isinstance(ax, np.ndarray):
+        ax = ax.ravel()
         for axi in ax:
             axi.set_prop_cycle(c) # color cycle
             axi.xaxis.label.set_size(1.1*size) # xaxis font size
