@@ -79,6 +79,11 @@ Digitization: Using 4 symbols
 [-1, 0.1, 1.3, 1.9, 1.5, 2.1, 1.8, 0.6, -0.5]
 ```
 
+## TODO
+
+* Make patches produce reconstruction that is the same length as original time series.
+* Isolate clustering from digitization. This will allow us to convert time series using already constructed ABBA representation.
+
 
 ## License
 
