@@ -40,6 +40,40 @@ class test_ABBA(unittest.TestCase):
         self.assertRaises(ValueError, ABBA, min_k=6, max_k=3)
 
     #--------------------------------------------------------------------------#
+    # transform
+    #--------------------------------------------------------------------------#
+    def test_transform_SimpleExample(self):
+        """
+        Check transform function returns identical results as performing
+        compression followed by digitization.
+        """
+        abba = ABBA(verbose=0, scl=1)
+        ts = np.random.rand(20).tolist()
+        string, centers = abba.transform(ts)
+
+        pieces = abba.compress(np.array(ts))
+        string2, centers2 = abba.digitize(pieces)
+        self.assertTrue(np.allclose(centers, centers2))
+
+    #--------------------------------------------------------------------------#
+    # inverse_transform
+    #--------------------------------------------------------------------------#
+    def test_InverseTransform_SimpleExample(self):
+        """
+        Check inverse_transform function returns identical results as performing
+        inverse_digitization followed by quantization then inverse_compression.
+        """
+        abba = ABBA(verbose=0, scl=1)
+        ts = np.random.rand(20)
+        pieces = abba.compress(np.array(ts))
+        string, centers = abba.digitize(pieces)
+        reconstructed_ts1 = abba.inverse_transform(string, centers, ts[0])
+        pieces1 = abba.inverse_digitize(string, centers)
+        pieces1 = abba.quantize(pieces1)
+        reconstructed_ts2  = abba.inverse_compress(ts[0], pieces1)
+        self.assertTrue(np.allclose(reconstructed_ts1, reconstructed_ts2))
+
+    #--------------------------------------------------------------------------#
     # compress
     #--------------------------------------------------------------------------#
     @ignore_warnings
@@ -58,7 +92,7 @@ class test_ABBA(unittest.TestCase):
         Test compression on a flat time series
         """
         ts = [1]*100
-        abba = ABBA(verbose=0)
+        abba = ABBA(verbose=0, tol=[0.1])
         pieces = abba.compress(ts)
         self.assertTrue(np.allclose(np.array([[99,0.0,0.0]]), pieces))
 
@@ -246,6 +280,22 @@ class test_ABBA(unittest.TestCase):
         string, centers = abba.digitize(pieces)
         correct_centers = np.array([[1, 1], [1, 1], [1, 1]])
         self.assertTrue(all([string=='aaaaa', np.allclose(centers, correct_centers)]))
+
+    @ignore_warnings
+    def test_Digitize_zeroerror(self):
+        """
+        Test digitize function when zero error, i.e. use max amount of clusters.
+        """
+        abba = ABBA(verbose=0, max_k=5, tol=[0.01, 0])
+        pieces = [[1, 1, 0],
+                  [1, 2, 0],
+                  [1, 3, 0],
+                  [1, 4, 0],
+                  [1, 5, 0]]
+        pieces = np.array(pieces).astype(float)
+        string, centers = abba.digitize(pieces)
+        correct_centers = np.array([[1, 1], [1, 2], [1, 3], [1, 4], [1, 5]])
+        self.assertTrue(all([string=='abcde', np.allclose(centers, correct_centers)]))
 
     #--------------------------------------------------------------------------#
     # inverse_digitize
@@ -511,6 +561,50 @@ class test_ABBA(unittest.TestCase):
         pieces = np.array(pieces).astype(float)
         string, centers = abba.digitize(pieces)
         self.assertTrue('abcaba'==string)
+
+    #--------------------------------------------------------------------------#
+    # get_patches
+    #--------------------------------------------------------------------------#
+    def test_GetPatches_SimpleExample(self):
+        """
+        Check the get_patches function works as expected
+        """
+        abba = ABBA(verbose=0)
+        ts = np.array([0, 1, 2, 3, 4, 2, 0, 2, 4, 3, 2, 1, 0])
+        pieces = [[4, 4, 0],
+                  [2, -4, 0],
+                  [2, 4, 0],
+                  [4, -4, 0]]
+        pieces = np.array(pieces)
+        string = 'abab'
+        centers = [[3, 4],
+                   [3, -4]]
+        centers = np.array(centers)
+
+        patches = abba.get_patches(ts, pieces, string, centers)
+        self.assertTrue(np.allclose(patches['a'][0] + patches['a'][1], -patches['b'][0] - patches['b'][1]))
+
+    #--------------------------------------------------------------------------#
+    # patched_reconstruction
+    #--------------------------------------------------------------------------#
+    def test_PatchedReconstruction_SimpleExample(self):
+        """
+        Check the patched_reconstruction function works as expected
+        """
+        abba = ABBA(verbose=0)
+        ts = np.array([0, 2, 2, 2, 4, 2, 2, 2, 0, 2, 2, 2, 4, 2, 2, 2, 0])
+        pieces = [[4, 4, 0],
+                  [4, -4, 0],
+                  [4, 4, 0],
+                  [4, -4, 0]]
+        pieces = np.array(pieces)
+        string = 'abab'
+        centers = [[4, 4],
+                   [4, -4]]
+        centers = np.array(centers)
+
+        reconstructed_ts = abba.patched_reconstruction(ts, pieces, string, centers)
+        self.assertTrue(np.allclose(ts, reconstructed_ts))
 
     #--------------------------------------------------------------------------#
     # util/dtw

@@ -92,7 +92,7 @@ def dtw(x, y, *, dist=lambda a, b: (a-b)*(a-b), return_path=False, filter_redund
         return D[len_x, len_y]
 
 
-def myfigure(nrows=1, ncols=1, fig_ratio=0.71, fig_scale=1):
+def myfigure(nrows=1, ncols=1, fig_ratio=0.71, fig_scale=1): # pragma: no cover
     """
     Parameters
     ----------
