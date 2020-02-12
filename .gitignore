@@ -3,3 +3,4 @@ __pycache__
 src/Ckmeans.py
 src/Ckmeans_wrap.cxx
 src/_Ckmeans.so
+htmlcov

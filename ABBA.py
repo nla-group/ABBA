@@ -87,37 +87,12 @@ class ABBA(object):
 
         self._check_parameters()
 
-
-    def transform(self, time_series):
-        """
-        Convert time series representation to ABBA symbolic representation
-        Parameters
-        ----------
-        time_series - numpy array
-            Normalised time series as numpy array.
-        Returns
-        -------
-        string - string
-            Time series in symbolic representation using unicode characters starting
-            with character 'a'.
-        centers - numpy array
-            Centres of clusters from clustering algorithm. Each center corresponds
-            to character in string.
-        """
-        time_series_ = self._check_time_series(time_series)
-        # Perform compression
-        pieces = self.compress(time_series_)
-
-        # Perform digitization
-        string, centers = self.digitize(pieces)
-        return string, centers
-
     def _check_time_series(self, time_series):
         # Convert time series to numpy array
         time_series_ = np.array(time_series)
 
         # Check normalisation if Normalise=False and Verbose
-        if self.verbose == 2:
+        if self.verbose == 2: # pragma: no cover
             if np.mean(time_series_) > np.finfo(float).eps:
                 print('Warning: Time series does not have zero mean.')
             if np.abs(np.std(time_series_) - 1) > np.finfo(float).eps:
@@ -149,7 +124,7 @@ class ABBA(object):
             raise ValueError('Invalid limits: min_k must be less than or equal to max_k')
 
         # Check verbose
-        if self.verbose not in [0, 1, 2]:
+        if self.verbose not in [0, 1, 2]: # pragma: no cover
             self.verbose == 1 # set to default
             print('Invalid verbose, setting to default')
 
@@ -169,6 +144,29 @@ class ABBA(object):
         if type(self.symmetric) is not bool:
             raise ValueError('Invalid symmetric.')
 
+    def transform(self, time_series):
+        """
+        Convert time series representation to ABBA symbolic representation
+        Parameters
+        ----------
+        time_series - numpy array
+            Normalised time series as numpy array.
+        Returns
+        -------
+        string - string
+            Time series in symbolic representation using unicode characters starting
+            with character 'a'.
+        centers - numpy array
+            Centres of clusters from clustering algorithm. Each center corresponds
+            to character in string.
+        """
+        time_series_ = self._check_time_series(time_series)
+        # Perform compression
+        pieces = self.compress(time_series_)
+
+        # Perform digitization
+        string, centers = self.digitize(pieces)
+        return string, centers
 
     def inverse_transform(self, string, centers, start=0):
         """
@@ -238,7 +236,7 @@ class ABBA(object):
                 start = end - 1
 
         pieces = np.vstack([pieces, np.array([end-start-1, lastinc, lasterr])])
-        if self.verbose in [1, 2]:
+        if self.verbose in [1, 2]: # pragma: no cover
             print('Compression: Reduced time series of length', len(time_series), 'to', len(pieces), 'segments')
         return pieces
 
@@ -256,6 +254,7 @@ class ABBA(object):
         pieces - numpy array
             Numpy array with three columns, each row contains increment, length,
             error for the segment. Only the first two columns are required.
+
         Returns
         -------
         time_series : Reconstructed time series
@@ -400,7 +399,6 @@ class ABBA(object):
         string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
         return string, centers[new_to_old, :]
 
-
     def digitize_ckmeans(self, data):
         # Initialise variables
         centers = np.zeros((0,2))
@@ -412,7 +410,7 @@ class ABBA(object):
             self.Ck = True
         except: #TODO use https://github.com/llimllib/ckmeans/blob/master/ckmeans.py instead
             self.Ck = False
-            if self.verbose in [1, 2]:
+            if self.verbose in [1, 2]: # pragma: no cover
                 warnings.warn('Ckmeans module unavailable, try running makefile. Using sklearn KMeans instead.',  stacklevel=3)
 
         ########################################################################
@@ -433,12 +431,12 @@ class ABBA(object):
 
             # Check if CKmeans compatible
             if self.Ck and (len(set(data[:,1])) < self.min_k):
-                if self.verbose in [1, 2]:
+                if self.verbose in [1, 2]: # pragma: no cover
                     warnings.warn('Note enough unique pieces for Ckmeans. Using sklearn KMeans instead.',  stacklevel=3)
                 self.Ck = False
 
             # Use C++ CKmeans
-            if self.Ck:
+            if self.Ck: # pragma: no cover
                 d = double_vector(data[:,1])
                 output = kmeans_1d_dp(d, self.min_k, self.max_k, bound, 'linear')
                 labels = np.array(output.cluster)
@@ -447,7 +445,7 @@ class ABBA(object):
                 c *= inc_std
                 centers = self._build_centers(data, labels, c, output.Kopt, 0)
 
-                if self.verbose in [1, 2]:
+                if self.verbose in [1, 2]: # pragma: no cover
                     print('Digitization: Using', output.Kopt, 'symbols')
 
                 k = output.Kopt
@@ -470,10 +468,10 @@ class ABBA(object):
 
                         error_1, error_2 = self._max_cluster_var(data[:,1].reshape(-1,1), labels, centers, k)
                         error = max([error_1, error_2])
-                        if self.verbose == 2:
+                        if self.verbose == 2: # pragma: no cover
                             print('k:', k)
                             print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
-                    if self.verbose in [1, 2]:
+                    if self.verbose in [1, 2]: # pragma: no cover
                         print('Digitization: Using', k, 'symbols')
 
                 # Zero error so cluster with largest possible k.
@@ -488,7 +486,7 @@ class ABBA(object):
                     centers = kmeans.cluster_centers_
                     labels = kmeans.labels_
                     error = self._max_cluster_var(data[:,1].reshape(-1,1), labels, centers, k)
-                    if self.verbose in [1, 2]:
+                    if self.verbose in [1, 2]: # pragma: no cover
                         print('Digitization: Using', k, 'symbols')
 
                 # build cluster centers
@@ -514,12 +512,12 @@ class ABBA(object):
 
             # Select first column and check unique for Ckmeans
             if self.Ck and (len(set(data[:,0])) < self.min_k):
-                if self.verbose in [1, 2]:
+                if self.verbose in [1, 2]: # pragma: no cover
                     warnings.warn('Note enough unique pieces for Ckmeans. Using sklearn KMeans instead.',  stacklevel=3)
                 self.Ck = False
 
             # Use Ckmeans
-            if self.Ck:
+            if self.Ck: # pragma: no cover
                 d = double_vector(data[:,0])
                 output = kmeans_1d_dp(d, self.min_k, self.max_k, bound, 'linear')
                 labels = np.array(output.cluster)
@@ -528,7 +526,7 @@ class ABBA(object):
                 c *= len_std
                 centers = self._build_centers(data, labels, c, output.Kopt, 1)
 
-                if self.verbose in [1, 2]:
+                if self.verbose in [1, 2]: # pragma: no cover
                     print('Digitization: Using', output.Kopt, 'symbols')
 
                 k = output.Kopt
@@ -550,10 +548,10 @@ class ABBA(object):
                         labels = kmeans.labels_
                         error_1, error_2 = self._max_cluster_var(data[:,0].reshape(-1,1), labels, centers, k)
                         error = max([error_1, error_2])
-                        if self.verbose == 2:
+                        if self.verbose == 2: # pragma: no cover
                             print('k:', k)
                             print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
-                    if self.verbose in [1, 2]:
+                    if self.verbose in [1, 2]: # pragma: no cover
                         print('Digitization: Using', k, 'symbols')
 
                 # Zero error so cluster with largest possible k.
@@ -568,7 +566,7 @@ class ABBA(object):
                     centers = kmeans.cluster_centers_
                     labels = kmeans.labels_
                     error = self._max_cluster_var(data[:,0].reshape(-1,1), labels, centers, k)
-                    if self.verbose in [1, 2]:
+                    if self.verbose in [1, 2]: # pragma: no cover
                         print('Digitization: Using', k, 'symbols')
 
                 # build cluster centers
@@ -618,10 +616,10 @@ class ABBA(object):
                 labels = kmeans.labels_
                 error_1, error_2 = self._max_cluster_var(data, labels, centers, k)
                 error = max([error_1, error_2])
-                if self.verbose == 2:
+                if self.verbose == 2: # pragma: no cover
                     print('k:', k)
                     print('d1_error:', error_1, 'd2_error:', error_2, 'bound:', bound)
-            if self.verbose in [1, 2]:
+            if self.verbose in [1, 2]: # pragma: no cover
                 print('Digitization: Using', k, 'symbols')
 
         # Zero error so cluster with largest possible k.
@@ -636,7 +634,7 @@ class ABBA(object):
             centers = kmeans.cluster_centers_
             labels = kmeans.labels_
             error = self._max_cluster_var(data, labels, centers, k)
-            if self.verbose in [1, 2]:
+            if self.verbose in [1, 2]: # pragma: no cover
                 print('Digitization: Using', k, 'symbols')
 
         # build cluster centers
@@ -645,8 +643,6 @@ class ABBA(object):
         centers[:,0] /= self.scl # reverse scaling
         centers[:,1] *= inc_std
         return labels, centers
-
-
 
     def digitize_incremental(self, data):
         """
@@ -756,7 +752,6 @@ class ABBA(object):
                     mval = data[ind[inds], 1]
         return labels, centers
 
-
     def inverse_digitize(self, string, centers):
         """
         Convert symbolic representation back to compressed representation for reconstruction.
@@ -845,7 +840,40 @@ class ABBA(object):
             inds = inde
         return patches
 
-    def plot_patches(self, patches, string, centers, ts0=0, xoffset=0):
+    def patched_reconstruction(self, time_series, pieces, string, centers):
+        """
+        An alternative reconstruction procedure which builds patches for each
+        cluster by extrapolating/intepolating the segments and taking the mean.
+        The reconstructed time series is no longer guaranteed to be of the same
+        length as the original.
+        Parameters
+        ----------
+        time_series - numpy array
+            Normalised time series as numpy array.
+        pieces - numpy array
+            One or both columns from compression. See compression.
+        string - string
+            Time series in symbolic representation using unicode characters starting
+            with character 'a'.
+        centers - numpy array
+            centers of clusters from clustering algorithm. Each center corresponds
+            to character in string.
+
+        """
+        patches = self.get_patches(time_series, pieces, string, centers)
+        # Construct mean of each patch
+        d = {}
+        for key in patches:
+            d[key] = list(np.mean(patches[key], axis=0))
+
+        reconstructed_time_series = [time_series[0]]
+        for letter in string:
+            patch = d[letter]
+            patch -= patch[0] - reconstructed_time_series[-1] # shift vertically
+            reconstructed_time_series = reconstructed_time_series + patch[1:].tolist()
+        return reconstructed_time_series
+
+    def plot_patches(self, patches, string, centers, ts0=0, xoffset=0): # pragma: no cover
         """
         Plot stitched patches.
         Parameters
