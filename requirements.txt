@@ -1,0 +1,6 @@
+joblib==0.13.2            # via scikit-learn
+numpy==1.17.0
+scikit-learn==0.21.3
+scipy==1.3.1              # via scikit-learn
+coverage==4.5.4
+matplotlib==3.1.1

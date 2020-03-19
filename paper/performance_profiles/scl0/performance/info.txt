@@ -1,0 +1,28 @@
+k: 9
+scl: 0
+tol: ['0.05', '0.10', '0.15', '0.20', '0.25', '0.30', '0.35', '0.40', '0.45', '0.50']
+
+Number of time series: 191177
+Success: 111889
+Failures: 79288
+
+Average compression percentage: 0.10252312446396328
+
+tol used: 
+nan: 79288
+0.05: 75417
+0.1: 9247
+0.15: 7786
+0.2: 5855
+0.25: 2972
+0.30: 2236
+0.35: 1910
+0.4: 1670
+0.45: 2146
+0.5: 2650
+
+No error: 111889
+Time series too short: 62199
+Not enough pieces: 3586
+Data too noisy: 13503
+Unknown error: 0
