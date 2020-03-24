@@ -789,7 +789,7 @@ class ABBA(object):
         else:
             for p in range(len(pieces)-1):
                 corr = round(pieces[p,0]) - pieces[p,0]
-                pieces[p,0] = round(pieces[p,0] + corr)
+                pieces[p,0] = int(pieces[p,0] + corr)
                 pieces[p+1,0] = pieces[p+1,0] - corr
                 if pieces[p,0] == 0:
                     pieces[p,0] = 1
@@ -825,7 +825,7 @@ class ABBA(object):
         for j in range(len(pieces)):
             let = string[j]                           # letter
             lab = ord(string[j])-97                   # label (integer)
-            lgt = round(centers[lab,0])               # patch length
+            lgt = int(centers[lab,0])               # patch length
             inc = centers[lab,1]                      # patch increment
             inde = inds + int(pieces[j,0]);
             tsp = ts[inds:inde+1]                      # time series patch
