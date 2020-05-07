@@ -1,5 +1,6 @@
 import pickle
 import numpy as np
+np.random.seed(1)
 import matplotlib.pyplot as plt
 from tslearn.metrics import dtw as dtw
 
@@ -55,8 +56,9 @@ tol_s = np.sqrt(6/len(pieces))*(tolerance/0.2)
 var_bound = np.multiply(p1, (p2/len(v_error)))*tol_s*tol_s
 bound = np.sqrt(var_bound)
 
-plt.plot(np.arange(0, len(v_error)+1),bound, color = '#D95319', label='probabilistic bound')
+plt.plot(np.arange(0, len(v_error)+1),bound, color = '#D95319', label='bound')
 plt.plot(np.arange(0, len(v_error)+1),-bound, color = '#D95319')
-plt.legend()
+plt.ylim([-0.9, 0.9])
+plt.legend(ncol=2, loc=8)
 
 plt.savefig('brownian_bridge.pdf')

@@ -8,7 +8,7 @@ import warnings
 
 def pca_mean(ts, width):
     if len(ts) % width != 0:
-        warnings.warn("Result truncates, width does not divide length")
+        warnings.warn("Result truncated, width does not divide length")
     return [np.mean(ts[i*width:np.min([len(ts), (i+1)*width])]) for i in range(int(np.floor(len(ts)/width)))]
 
 def reverse_pca(ts, width):

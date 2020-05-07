@@ -14,6 +14,8 @@ ts = np.sin(linspace)
 ts += 0.2*np.random.randn(500)
 ts += np.linspace(0, 4, 500)
 
+x_axis_lim = 7
+
 # Plot SAX representation
 fig, (ax1, ax2, ax3, ax4) = myfigure(nrows=4, ncols=1, fig_ratio=0.71, fig_scale=1)
 plt.subplots_adjust(left=0.125, bottom=None, right=0.95, top=None, wspace=None, hspace=None)
@@ -27,7 +29,7 @@ reduced_ts = SAX.reverse_digitize(symbolic_ts, number_of_symbols = 9)
 ts_SAX = SAX.reconstruct(reduced_ts, width = 4)
 ax1.plot(ts1)
 ax1.plot(ts_SAX)
-ax1.axis([0, 500, -2.5, 2.5])
+ax1.set(xlim=(0, 500), ylim=(-x_axis_lim, x_axis_lim))
 ax1.set_ylabel('(i)', rotation='horizontal', labelpad=20)
 
 # Plot SAX representation of differences time series
@@ -40,13 +42,13 @@ reduced_ts = SAX.reverse_digitize(symbolic_ts, number_of_symbols = 9)
 ts_SAX = SAX.reconstruct(reduced_ts, width = 4)
 ax2.plot(ts2)
 ax2.plot(ts_SAX)
-ax2.axis([0, 500, -2.5, 2.5])
+ax2.set(xlim=(0, 500), ylim=(-x_axis_lim, x_axis_lim))
 ax2.set_ylabel('(ii)', rotation='horizontal', labelpad=20)
 
 # Reverse differencing
 ax3.plot(ts1)
 ax3.plot(np.cumsum(ts_SAX))
-ax3.axis([0, 500, -2.5, 2.5])
+ax3.set(xlim=(0, 500), ylim=(-x_axis_lim, x_axis_lim))
 ax3.set_ylabel('(iii)', rotation='horizontal', labelpad=20)
 
 # Plot ABBA representation
@@ -56,7 +58,8 @@ print('ABBA representation length:', len(string))
 ts_recon = abba.inverse_transform(string, centers, ts1[0])
 ax4.plot(ts1)
 ax4.plot(ts_recon)
-ax4.axis([0, 500, -2.5, 2.5])
+ax4.set(xlim=(0, 500), ylim=(-x_axis_lim, x_axis_lim))
 ax4.set_ylabel('(iv)', rotation='horizontal', labelpad=20)
 
+fig.tight_layout()
 plt.savefig('linear_trend.pdf')
