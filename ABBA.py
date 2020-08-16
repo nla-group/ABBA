@@ -48,8 +48,6 @@ class ABBA(object):
         to cumulative error.
     Symmetric - True/False
         When using c_method = 'incremental, cluster from both ends to ensure symmetry.
-
-
     Raises
     ------
     ValueError: Invalid tol, Invalid scl, Invalid min_k, len(pieces)<min_k.
@@ -254,7 +252,6 @@ class ABBA(object):
         pieces - numpy array
             Numpy array with three columns, each row contains increment, length,
             error for the segment. Only the first two columns are required.
-
         Returns
         -------
         time_series : Reconstructed time series
@@ -393,11 +390,21 @@ class ABBA(object):
         # invert permutation
         old_to_new = [0] * k
         for i, p in enumerate(new_to_old):
-            old_to_new[p] = i
-
+            try:
+                old_to_new[p] = i
+            except TypeError:
+                #print("ord(p):",ord(p))
+                old_to_new[ord(p) - 97] = i
+                
         # Convert labels to string
-        string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
-        return string, centers[new_to_old, :]
+        # corrected 24/03/2020
+        try:
+            string = ''.join([ chr(97 + old_to_new[j]) for j in labels ])
+            return string, centers[new_to_old, :]
+        except TypeError:
+            #print(labels)
+            string = ''.join(labels)
+            return string, centers
 
     def digitize_ckmeans(self, data):
         # Initialise variables
@@ -638,7 +645,7 @@ class ABBA(object):
                 print('Digitization: Using', k, 'symbols')
 
         # build cluster centers
-        c = centers.reshape(1,-1)[0]
+        #c = centers.reshape(1,-1)[0]
         centers[:,0] *= len_std
         centers[:,0] /= self.scl # reverse scaling
         centers[:,1] *= inc_std
@@ -671,12 +678,13 @@ class ABBA(object):
                 else:
                     w_median = s_data[idx+1]
             return w_median
-
+        
         # Initialise variables
         centers = np.zeros((0,2))
         labels = [-1]*np.shape(data)[0]
-
-        if self.symmetric:
+        
+        #corrected 24/03/2020
+        if not self.symmetric and len(data[:,1]) % 2 == 0:
             ind = np.argsort(abs(data[:,1]))
         else:
             ind = np.argsort(data[:,1])
@@ -736,7 +744,7 @@ class ABBA(object):
                 for ii in ind[inds:inde+1]:
                     labels[ii] = k
                 centers = np.vstack((centers, np.array([mlen, old_mval])))
-
+                
                 if self.symmetric and not sign_sorted and sign_change:
                     ind1 = ind[inde+1:]
                     lst = data[ind1, 1]
@@ -750,7 +758,13 @@ class ABBA(object):
 
                 if inds < np.shape(data)[0]:
                     mval = data[ind[inds], 1]
-        return labels, centers
+        
+        # corrected 24/03/2020 
+        string_form = list()
+        for i in labels:
+            string_form.append(chr(i + 97))
+        string = ''.join(string_form )
+        return string, centers
 
     def inverse_digitize(self, string, centers):
         """
@@ -789,7 +803,7 @@ class ABBA(object):
         else:
             for p in range(len(pieces)-1):
                 corr = round(pieces[p,0]) - pieces[p,0]
-                pieces[p,0] = round(pieces[p,0] + corr)
+                pieces[p,0] = int(round(pieces[p,0] + corr))
                 pieces[p+1,0] = pieces[p+1,0] - corr
                 if pieces[p,0] == 0:
                     pieces[p,0] = 1
@@ -804,7 +818,6 @@ class ABBA(object):
         ----------
         ts - numpy array
             Original time series.
-
         pieces - numpy array
             Time series in compressed format.
         string - string
@@ -813,7 +826,6 @@ class ABBA(object):
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
             to a character in string.
-
         Returns
         -------
         patches - dict
@@ -825,7 +837,8 @@ class ABBA(object):
         for j in range(len(pieces)):
             let = string[j]                           # letter
             lab = ord(string[j])-97                   # label (integer)
-            lgt = round(centers[lab,0])               # patch length
+            #corrected 24/03/2020
+            lgt = int(round(centers[lab,0]))             # patch length
             inc = centers[lab,1]                      # patch increment
             inde = inds + int(pieces[j,0]);
             tsp = ts[inds:inde+1]                      # time series patch
@@ -858,7 +871,6 @@ class ABBA(object):
         centers - numpy array
             centers of clusters from clustering algorithm. Each center corresponds
             to character in string.
-
         """
         patches = self.get_patches(time_series, pieces, string, centers)
         # Construct mean of each patch
@@ -880,18 +892,14 @@ class ABBA(object):
         ----------
         patches - dict
             Dictionary of patches as returned by get_patches.
-
         string - string
             Time series in symbolic representation using unicode characters starting
             with character 'a'.
-
         centers - numpy array
             centers of clusters from clustering algorithm. Each centre corresponds
             to a character in string.
-
         ts0 - float
             First time series value (default 0).
-
         xoffset - float
             Start index on x-axis for plotting (default 0)
         """
@@ -901,7 +909,8 @@ class ABBA(object):
         for j in range(len(string)):
             let = string[j]                           # letter
             lab = ord(string[j])-97                   # label (integer)
-            lgt = int(centers[lab,0])               # patch length
+            #corrected 24/03/2020
+            lgt = int(round(centers[lab,0]))               # patch length
             inc = centers[lab,1]                      # patch increment
             inde = inds + lgt
             xp = np.arange(inds,inde+1,1)             # time series x-vals
@@ -915,7 +924,7 @@ class ABBA(object):
         for j in range(len(string)):
             let = string[j]                           # letter
             lab = ord(string[j])-97                   # label (integer)
-            lgt = round(centers[lab,0])               # patch length
+            lgt = int(round(centers[lab,0]))               # patch length
             inc = centers[lab,1]                      # patch increment
             inde = inds + lgt
             xp = np.arange(inds,inde+1,1)             # time series x-vals
