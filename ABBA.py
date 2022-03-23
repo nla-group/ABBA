@@ -364,7 +364,11 @@ class ABBA(object):
 
         # Construct deep copy and scale data
         data = deepcopy(pieces[:,0:2])
-
+        num_k = np.unique(np.array(data), axis=1).shape[0]
+        if num_k >= self.min_k:
+            self.min_k = num_k - 1
+            if num_k >= self.max_k:
+                self.max_k = num_k - 1
         ########################################################################
         #     'incremental'
         ########################################################################
